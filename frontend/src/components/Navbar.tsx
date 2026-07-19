@@ -1,0 +1,91 @@
+import {
+  VideoCameraIcon,
+  ArrowRightOnRectangleIcon,
+} from "@heroicons/react/24/outline";
+
+export default function Navbar() {
+  return (
+    <nav
+      className="
+    bg-white
+    border-b
+    "
+    >
+      <div
+        className="
+    max-w-6xl
+    mx-auto
+    px-6
+    py-4
+    flex
+    justify-between
+    items-center
+    "
+      >
+        <div
+          className="
+    flex
+    items-center
+    gap-3
+    "
+        >
+          <div
+            className="
+    bg-blue-600
+    text-white
+    p-2
+    rounded-xl
+    "
+          >
+            <VideoCameraIcon
+              className="
+    w-6
+    h-6
+    "
+            />
+          </div>
+
+          <h1
+            className="
+    text-2xl
+    font-bold
+    text-blue-600
+    "
+          >
+            TeachFlow
+          </h1>
+        </div>
+
+        <div
+          className="
+    flex
+    items-center
+    gap-5
+    "
+        >
+          <span
+            className="
+    text-gray-600
+    "
+          >
+            John
+          </span>
+
+          <button
+            className="
+    text-red-500
+    hover:text-red-600
+    "
+          >
+            <ArrowRightOnRectangleIcon
+              className="
+    w-6
+    h-6
+    "
+            />
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
