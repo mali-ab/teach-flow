@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../lib/axios";
 import {
   VideoCameraIcon,
   LinkIcon,
@@ -31,11 +31,7 @@ export default function JoinMeeting() {
     setError(null);
 
     try {
-      const response = await axios.get(`/api/meetings/${cleanId}/join`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-      });
+      const response = await api.get(`/meetings/${cleanId}/join`);
 
       if (response.data?.url) {
         window.location.href = response.data.url;

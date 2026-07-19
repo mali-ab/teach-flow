@@ -5,6 +5,7 @@ import (
   "crypto/hmac"
   "crypto/rand"
   "crypto/sha256"
+  "database/sql"
   "encoding/base64"
   "encoding/hex"
   "encoding/json"
@@ -15,8 +16,9 @@ import (
   "net/url"
   "os"
   "strings"
-
   "time"
+
+  _ "github.com/lib/pq"
 )
 
 type AppConfig struct {
@@ -86,6 +88,7 @@ type contextKey string
 
 var (
   config AppConfig
+  db     *sql.DB
 )
 
 func main() {
@@ -150,6 +153,69 @@ func seedDefaultUser() {
     log.Fatalf("failed to seed default user: %v", err)
   }
   log.Printf("created default user: %s / password123", defaultEmail)
+}
+
+func initDB() {
+  dsn := os.Getenv("DATABASE_URL")
+  if dsn == "" {
+    dsn = fmt.Sprintf(
+      "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+      config.DBHost,
+      config.DBPort,
+      config.DBUser,
+      config.DBPassword,
+      config.DBName,
+    )
+  }
+
+  var err error
+  db, err = sql.Open("postgres", dsn)
+  if err != nil {
+    log.Fatalf("failed to open postgres connection: %v", err)
+  }
+
+  db.SetMaxOpenConns(10)
+  db.SetMaxIdleConns(2)
+  db.SetConnMaxLifetime(30 * time.Minute)
+
+  if err := db.Ping(); err != nil {
+    log.Fatalf("failed to ping postgres: %v", err)
+  }
+
+  if err := createSchema(); err != nil {
+    log.Fatalf("failed to create schema: %v", err)
+  }
+}
+
+func createSchema() error {
+  schema := `
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS meetings (
+  id TEXT PRIMARY KEY,
+  room_name TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  description TEXT,
+  scheduled_at TEXT,
+  duration_minutes INTEGER,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+`
+  _, err := db.Exec(schema)
+  return err
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -259,9 +325,10 @@ func createMeetingHandler(w http.ResponseWriter, r *http.Request) {
     CreatedAt:      time.Now().UTC().Format(time.RFC3339),
   }
 
-  mu.Lock()
-  meetings[meeting.ID] = meeting
-  mu.Unlock()
+  if err := insertMeeting(meeting); err != nil {
+    writeError(w, http.StatusInternalServerError, "failed to save meeting")
+    return
+  }
 
   writeJSON(w, http.StatusCreated, meeting)
 }
@@ -314,25 +381,15 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
       return
     }
 
-    token := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+    token := authHeaderToken(authHeader)
     if token == "" {
       writeError(w, http.StatusUnauthorized, "invalid Authorization header")
       return
     }
 
-    mu.RLock()
-    userID, ok := sessions[token]
-    mu.RUnlock()
+    user, ok := findUserByToken(token)
     if !ok {
-      writeError(w, http.StatusUnauthorized, "session not found")
-      return
-    }
-
-    mu.RLock()
-    user := users[userID]
-    mu.RUnlock()
-    if user == nil {
-      writeError(w, http.StatusUnauthorized, "user not found")
+      writeError(w, http.StatusUnauthorized, "invalid or expired token")
       return
     }
 
@@ -348,22 +405,83 @@ func contextWithUser(ctx context.Context, user *User) context.Context {
 
 func createSession(userID string) string {
   token := randomID(24)
-  mu.Lock()
-  sessions[token] = userID
-  mu.Unlock()
+  expiresAt := time.Now().Add(time.Duration(config.TokenTTLSeconds) * time.Second)
+  if err := insertSession(token, userID, expiresAt); err != nil {
+    log.Printf("failed to insert session: %v", err)
+  }
   return token
 }
 
 func findUserByEmail(email string) (*User, bool) {
-  lower := strings.ToLower(email)
-  mu.RLock()
-  defer mu.RUnlock()
-  for _, user := range users {
-    if strings.ToLower(user.Email) == lower {
-      return user, true
+  lowerEmail := strings.ToLower(email)
+  user := &User{}
+  err := db.QueryRow(
+    `SELECT id, name, email, password_hash FROM users WHERE email = LOWER($1)`,
+    lowerEmail,
+  ).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+  if err != nil {
+    if err == sql.ErrNoRows {
+      return nil, false
     }
+    log.Printf("findUserByEmail error: %v", err)
+    return nil, false
   }
-  return nil, false
+  return user, true
+}
+
+func findUserByToken(token string) (*User, bool) {
+  user := &User{}
+  err := db.QueryRow(
+    `SELECT u.id, u.name, u.email, u.password_hash
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.token = $1 AND s.expires_at > NOW()`,
+    token,
+  ).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+  if err != nil {
+    if err == sql.ErrNoRows {
+      return nil, false
+    }
+    log.Printf("findUserByToken error: %v", err)
+    return nil, false
+  }
+  return user, true
+}
+
+func insertUser(user *User) error {
+  _, err := db.Exec(
+    `INSERT INTO users (id, name, email, password_hash) VALUES ($1, $2, LOWER($3), $4)`,
+    user.ID,
+    user.Name,
+    user.Email,
+    user.PasswordHash,
+  )
+  return err
+}
+
+func insertSession(token, userID string, expiresAt time.Time) error {
+  _, err := db.Exec(
+    `INSERT INTO sessions (token, user_id, expires_at) VALUES ($1, $2, $3)`,
+    token,
+    userID,
+    expiresAt,
+  )
+  return err
+}
+
+func insertMeeting(meeting *Meeting) error {
+  _, err := db.Exec(
+    `INSERT INTO meetings (id, room_name, title, description, scheduled_at, duration_minutes, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    meeting.ID,
+    meeting.RoomName,
+    meeting.Title,
+    meeting.Description,
+    meeting.ScheduledAt,
+    meeting.DurationMinutes,
+    meeting.CreatedAt,
+  )
+  return err
 }
 
 func hashPassword(password string) string {
@@ -489,10 +607,6 @@ func withCORS(next http.HandlerFunc) http.HandlerFunc {
     }
     next(w, r)
   }
-}
-
-func contextWithUser(ctx context.Context, user *User) context.Context {
-  return context.WithValue(ctx, contextKey("user"), user)
 }
 
 func authHeaderToken(header string) string {
