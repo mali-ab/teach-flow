@@ -1,9 +1,12 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+
 import DashboardNavbar from "../components/dashboard/DashboardNavbar";
 import StatCard from "../components/dashboard/StatCard";
 import UpcomingMeeting from "../components/dashboard/UpcomingMeeting";
 import QuickAction from "../components/dashboard/QuickAction";
+import { useAuth } from "../contexts/AuthContext";
+
 
 import {
   VideoCameraIcon,
@@ -23,11 +26,12 @@ interface ActivityItem {
   type: "completed" | "scheduled" | "cancelled";
 }
 
-// Sample dynamic activity data
-const recentActivities: ActivityItem[] = [
+// Activity: placeholder items that can be personalized by showing user name.
+// (Backend activity feed can be wired later.)
+const recentActivities = (displayName: string): ActivityItem[] => [
   {
     id: 1,
-    title: "Physics Class ended",
+    title: `Physics Class ended • ${displayName}`,
     time: "Today at 10:45 AM",
     type: "completed",
   },
@@ -39,17 +43,44 @@ const recentActivities: ActivityItem[] = [
   },
 ];
 
+
 export const Dashboard: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const displayName = user?.name ?? "";
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      <DashboardNavbar />
+      <DashboardNavbar userName={displayName || "User"} />
+
+      {/* Logout is handled here so we can use useAuth() */}
+      {/* (DashboardNavbar remains reusable; button is in page layout) */}
+
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
         {/* Welcome Banner Section */}
         <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="space-y-4 z-10 max-w-xl">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Welcome back, John 👋
+              Welcome back, {displayName} 👋
+
             </h1>
             <p className="text-blue-100 text-base sm:text-lg font-normal leading-relaxed">
               Start meetings, invite students, and manage your online classroom
@@ -122,10 +153,12 @@ export const Dashboard: React.FC = () => {
 
         {/* Recent Activity Feed */}
         <section className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
+
           <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
 
           <div className="mt-5 space-y-3">
-            {recentActivities.map((activity: ActivityItem) => (
+            {recentActivities(displayName).map((activity: ActivityItem) => (
+
               <div
                 key={activity.id}
                 className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100 hover:bg-slate-100/60 transition duration-150"

@@ -19,6 +19,7 @@ interface MeetingControlsProps {
   onLeave?: () => void;
 }
 
+
 export default function MeetingControls({
   isAudioMuted,
   setIsAudioMuted,
@@ -66,9 +67,11 @@ export default function MeetingControls({
           <VideoCameraIcon className="h-5 w-5" />
         </button>
 
+
         <button
           type="button"
-          onClick={() => setIsScreenSharing()}
+          onClick={setIsScreenSharing}
+
           aria-label={isScreenSharing ? "Stop sharing screen" : "Share screen"}
           className={`${buttonClass} ${
             isScreenSharing

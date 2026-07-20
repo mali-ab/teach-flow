@@ -8,7 +8,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), mkcert()],
   server: {
     port: 3000,
-    https: true,
+    // mkcert plugin injects HTTPS certs; omit `server.https` to satisfy TS types
+
+
+
+
     proxy: {
       "/api": {
         target: "http://localhost:8080",

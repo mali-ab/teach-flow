@@ -5,6 +5,7 @@ import VideoGrid from "../components/meetings/VideoGrid";
 import MeetingControls from "../components/meetings/MeetingControls";
 import ChatSidebar from "../components/meetings/ChatSidebar";
 import ParticipantsSidebar from "../components/meetings/ParticipantsSidebar";
+import { JitsiRoomProvider, useJitsiRoom } from "../contexts/JitsiRoomContext";
 import api from "../lib/axios";
 
 export interface Participant {
@@ -19,26 +20,36 @@ export interface Participant {
 }
 
 export default function MeetingRoom() {
+  return (
+    <JitsiRoomProvider>
+      <MeetingRoomContent />
+    </JitsiRoomProvider>
+  );
+}
+
+function MeetingRoomContent() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const { jitsiUrl, isReady, joinConference, leaveConference, toggleScreenShare, conferenceError } = useJitsiRoom();
 
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [activeSidePanel, setActiveSidePanel] = useState<
-    "chat" | "participants" | null
-  >(null);
+  const [activeSidePanel, setActiveSidePanel] = useState<"chat" | "participants" | null>(null);
   const [roomName, setRoomName] = useState<string>(id ? decodeURIComponent(id) : "TeachFlow Room");
   const [joinUrl, setJoinUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [durationSeconds, setDurationSeconds] = useState(0);
-  const [screenShareStream, setScreenShareStream] = useState<MediaStream | null>(null);
+  const [displayName, setDisplayName] = useState("You");
+  const [jitsiJoined, setJitsiJoined] = useState(false);
+
   const participantIdRef = useRef<string | null>(null);
   const [localParticipantId, setLocalParticipantId] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<Array<{ id: number; sender: string; text: string; time: string; isSelf?: boolean }>>([
-
+  const [chatMessages, setChatMessages] = useState<
+    Array<{ id: number; sender: string; text: string; time: string; isSelf?: boolean }>
+  >([
     {
       id: 1,
       sender: "System",
@@ -51,7 +62,6 @@ export default function MeetingRoom() {
     const timer = window.setInterval(() => {
       setDurationSeconds((prev) => prev + 1);
     }, 1000);
-
     return () => window.clearInterval(timer);
   }, []);
 
@@ -87,7 +97,6 @@ export default function MeetingRoom() {
     }
   };
 
-
   useEffect(() => {
     const roomId = id ? decodeURIComponent(id) : "";
     if (!roomId) {
@@ -108,20 +117,21 @@ export default function MeetingRoom() {
 
     setParticipants([localUser]);
 
-
     let isActive = true;
     let pollTimer: number | undefined;
 
-    const mergeParticipants = (responseParticipants: Array<{ id: string; name: string; isScreenSharing?: boolean }>) => {
-      const participantId = getOrCreateLocalParticipantId();
-      const remoteParticipants = responseParticipants
-        .filter((participant) => participant.id !== participantId)
+    const mergeParticipants = (
+      responseParticipants: Array<{ id: string; name: string; isScreenSharing?: boolean }>
+    ) => {
+      const selfId = participantId;
 
-        .map((participant) => ({
-          id: participant.id,
-          name: participant.name,
+      const remoteParticipants = responseParticipants
+        .filter((p) => p.id !== selfId)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
           isSelf: false,
-          isScreenSharing: participant.isScreenSharing ?? false,
+          isScreenSharing: p.isScreenSharing ?? false,
         }));
 
       const mergedParticipants = [localUser, ...remoteParticipants];
@@ -132,57 +142,49 @@ export default function MeetingRoom() {
 
     const syncParticipants = async () => {
       if (!isActive) return;
-
       try {
         const response = await api.post(`/meetings/${roomId}/participants`, {
-        participantId: getOrCreateLocalParticipantId(),
-        isScreenSharing,
-      });
-
-        const remoteParticipants = (response.data?.participants ?? []) as Array<{ id: string; name: string; isScreenSharing?: boolean }>;
+          participantId: getOrCreateLocalParticipantId(),
+          isScreenSharing,
+        });
+        const remoteParticipants = (response.data?.participants ?? []) as Array<{
+          id: string;
+          name: string;
+          isScreenSharing?: boolean;
+        }>;
         mergeParticipants(remoteParticipants);
       } catch {
-        if (isActive) {
-          setParticipants([localUser]);
-        }
+        if (isActive) setParticipants([localUser]);
       }
     };
 
     const refreshParticipants = async () => {
       if (!isActive) return;
-
       try {
         const response = await api.get(`/meetings/${roomId}/participants`);
-        const remoteParticipants = (response.data?.participants ?? []) as Array<{ id: string; name: string; isScreenSharing?: boolean }>;
+        const remoteParticipants = (response.data?.participants ?? []) as Array<{
+          id: string;
+          name: string;
+          isScreenSharing?: boolean;
+        }>;
         mergeParticipants(remoteParticipants);
       } catch {
-        if (isActive) {
-          setParticipants([localUser]);
-        }
+        if (isActive) setParticipants([localUser]);
       }
     };
 
     const loadMeeting = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const response = await api.get(`/meetings/${roomId}/join`);
         if (!isActive) return;
-
-        if (response.data?.url) {
-          setJoinUrl(response.data.url);
-        }
-        if (response.data?.room_name) {
-          setRoomName(response.data.room_name);
-        } else if (response.data?.id) {
-          setRoomName(response.data.id);
-        }
+        if (response.data?.url) setJoinUrl(response.data.url);
+        if (response.data?.room_name) setRoomName(response.data.room_name);
+        else if (response.data?.id) setRoomName(response.data.id);
       } catch (err: any) {
         if (!isActive) return;
-        const message =
-          err.response?.data?.message ||
-          "Unable to reach the meeting service. You can still use the local room view.";
+        const message = err.response?.data?.message || "Unable to reach the meeting service.";
         setError(message);
       } finally {
         if (isActive) setLoading(false);
@@ -192,41 +194,44 @@ export default function MeetingRoom() {
     loadMeeting();
     void syncParticipants();
     void refreshParticipants();
-    pollTimer = window.setInterval(() => {
-      void refreshParticipants();
-    }, 2000);
+    pollTimer = window.setInterval(() => void refreshParticipants(), 2000);
 
     return () => {
       isActive = false;
-      if (pollTimer) {
-        window.clearInterval(pollTimer);
-      }
-
-      const participantId = participantIdRef.current;
-      if (participantId) {
-        void api.delete(`/meetings/${roomId}/participants/${participantId}`).catch(() => undefined);
-      }
+      if (pollTimer) window.clearInterval(pollTimer);
+      const pid = participantIdRef.current;
+      if (pid) void api.delete(`/meetings/${roomId}/participants/${pid}`).catch(() => undefined);
+      leaveConference();
     };
   }, [id]);
 
+  // Join Jitsi conference when joinUrl is available
+  useEffect(() => {
+    if (!joinUrl || jitsiJoined) return;
+    setJitsiJoined(true);
+    joinConference({
+      roomName,
+      displayName,
+      url: joinUrl,
+    });
+  }, [joinUrl, jitsiJoined, roomName, displayName, joinConference]);
+
   const currentParticipants = useMemo(() => {
+    if (!localParticipantId) return [];
     const localUser: Participant = {
-      id: localParticipantId ?? "local-user",
+      id: localParticipantId,
       name: "You",
       isSelf: true,
       isAudioMuted,
       isVideoOff,
       isScreenSharing,
     };
-
-
-    const others = participants.filter((p) => !p.isSelf && p.id !== localUser.id);
+    const others = participants.filter((p) => p.id !== localParticipantId);
     return [localUser, ...others];
-
-  }, [participants, isAudioMuted, isVideoOff, isScreenSharing]);
+  }, [participants, localParticipantId, isAudioMuted, isVideoOff, isScreenSharing]);
 
   const activeScreenShareParticipant = useMemo(() => {
-    return currentParticipants.find((participant) => participant.isScreenSharing);
+    return currentParticipants.find((p) => p.isScreenSharing);
   }, [currentParticipants]);
 
   const toggleSidePanel = (panel: "chat" | "participants") => {
@@ -234,89 +239,86 @@ export default function MeetingRoom() {
   };
 
   const handleLeave = () => {
+    leaveConference();
     navigate("/dashboard");
   };
 
-  const handleScreenShare = async () => {
+  const handleScreenShare = () => {
     if (isScreenSharing) {
       setIsScreenSharing(false);
-      if (screenShareStream) {
-        screenShareStream.getTracks().forEach((track) => track.stop());
-      }
-      setScreenShareStream(null);
       void syncParticipantPresence(false);
-      return;
-    }
-
-    try {
-      if (typeof window === "undefined" || !navigator.mediaDevices?.getDisplayMedia) {
-        setError("Screen sharing is not supported in this browser.");
-        return;
-      }
-
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: false,
-      });
-
-      setScreenShareStream(stream);
+    } else {
       setIsScreenSharing(true);
-      setError(null);
       void syncParticipantPresence(true);
-      stream.getVideoTracks().forEach((track) => {
-        track.addEventListener("ended", () => {
-          setIsScreenSharing(false);
-          setScreenShareStream(null);
-          void syncParticipantPresence(false);
-        });
-      });
-    } catch {
-      setError("Screen sharing was cancelled.");
     }
+    // Jitsi handles the actual screen share via its own UI in the iframe
+    toggleScreenShare();
   };
 
   return (
     <div className="h-screen w-screen bg-[#020617] text-slate-100 flex flex-col overflow-hidden select-none">
-      {/* Top Header with live participant count */}
       <MeetingHeader
         roomName={roomName}
-        duration={new Date(durationSeconds * 1000).toISOString().slice(14, 19)}
+        duration={(() => {
+          const totalSeconds = durationSeconds;
+          const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+          const hours = Math.floor(safeSeconds / 3600);
+          const minutes = Math.floor((safeSeconds % 3600) / 60);
+          const seconds = safeSeconds % 60;
+          const pad2 = (n: number) => String(n).padStart(2, "0");
+          return hours > 0
+            ? `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
+            : `${pad2(minutes)}:${pad2(seconds)}`;
+        })()}
         participantCount={currentParticipants.length}
         role="Host"
         isSpeaking={!isAudioMuted}
       />
 
-      {/* Main Workspace: Video Grid / Presentation View + Optional Drawer */}
       <div className="flex-1 flex overflow-hidden relative p-4 gap-4">
-        {/* Central Video Area */}
         <main className="flex-1 flex flex-col items-center justify-center relative rounded-2xl bg-slate-950/60 border border-slate-800/80 backdrop-blur-md overflow-hidden transition-all duration-300">
           {error && (
-            <div className="absolute top-4 left-4 right-4 z-10 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            <div className="absolute top-4 left-4 right-4 z-20 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
               {error}
             </div>
           )}
 
-          {loading && !joinUrl && (
-            <div className="text-sm text-slate-400">Connecting to meeting room…</div>
+          {conferenceError && (
+            <div className="absolute top-4 left-4 right-4 z-20 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {conferenceError}
+            </div>
           )}
 
-          <VideoGrid
-            isAudioMuted={isAudioMuted}
-            isVideoOff={isVideoOff}
-            isScreenSharing={isScreenSharing}
-            activeScreenShareParticipantId={activeScreenShareParticipant?.id ?? null}
-            screenShareStream={screenShareStream}
-            participants={currentParticipants}
-          />
+          {/* Jitsi iframe embed - fills the main area */}
+          {jitsiUrl && (
+            <iframe
+              src={jitsiUrl}
+              allow="camera; microphone; display-capture; fullscreen"
+              className="w-full h-full rounded-2xl border-0"
+              title="Jitsi Meeting"
+            />
+          )}
 
-          {joinUrl && (
-            <div className="absolute bottom-4 right-4 rounded-xl border border-blue-500/30 bg-blue-600/10 px-4 py-2 text-sm text-blue-200 shadow-lg shadow-blue-950/20">
-              Room ready: {roomName}
+          {/* Show loading state while waiting */}
+          {!jitsiUrl && loading && (
+            <div className="text-sm text-slate-400 flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <span>Connecting to meeting room…</span>
             </div>
+          )}
+
+          {/* Show the participant tile grid when no iframe is present (fallback) */}
+          {!jitsiUrl && !loading && (
+            <VideoGrid
+              isAudioMuted={isAudioMuted}
+              isVideoOff={isVideoOff}
+              isScreenSharing={isScreenSharing}
+              activeScreenShareParticipantId={activeScreenShareParticipant?.id ?? null}
+              participants={currentParticipants}
+            />
           )}
         </main>
 
-        {/* Dynamic Side Drawer */}
         {activeSidePanel === "chat" && (
           <ChatSidebar
             messages={chatMessages}
@@ -325,7 +327,10 @@ export default function MeetingRoom() {
                 id: Date.now(),
                 sender: "You",
                 text,
-                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                time: new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
                 isSelf: true,
               };
               setChatMessages((prev) => [...prev, newMessage]);
@@ -341,7 +346,6 @@ export default function MeetingRoom() {
         )}
       </div>
 
-      {/* Bottom Floating Controls Bar */}
       <MeetingControls
         isAudioMuted={isAudioMuted}
         setIsAudioMuted={setIsAudioMuted}
@@ -356,3 +360,4 @@ export default function MeetingRoom() {
     </div>
   );
 }
+

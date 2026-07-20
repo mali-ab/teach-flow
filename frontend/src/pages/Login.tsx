@@ -58,6 +58,22 @@ export default function Login() {
         localStorage.setItem("token", response.data.token);
       }
 
+      // Persist user info for AuthContext-driven UI
+      // Backend now returns { token, user }
+      if (response.data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: response.data.user.id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            // Backend Role isn't returned yet; default to teacher.
+            role: "teacher" as const,
+          })
+        );
+      }
+
+
       // Redirect to dashboard upon successful authentication
       navigate("/dashboard");
     } catch (err) {

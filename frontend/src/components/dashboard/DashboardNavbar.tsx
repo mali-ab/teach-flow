@@ -1,10 +1,11 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
   BellIcon,
   VideoCameraIcon,
   ChevronDownIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface DashboardNavbarProps {
   userName?: string;
@@ -22,6 +23,13 @@ export default function DashboardNavbar({
     { name: "Meetings", href: "/meetings" },
     { name: "Schedule", href: "/schedule" },
   ];
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <header className="sticky top-0 z-50 h-16 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 transition-all">
@@ -87,37 +95,37 @@ export default function DashboardNavbar({
           </button> */}
 
           {/* User Profile Dropdown Toggle */}
-          <button
-            type="button"
-            className="flex items-center gap-2.5 p-1 pl-1.5 pr-2.5 rounded-full hover:bg-slate-100/80 border border-transparent hover:border-slate-200 transition-all focus:outline-none"
-          >
-            <div className="relative">
-              {userAvatar ? (
-                <img
-                  src={userAvatar}
-                  alt={userName}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center font-semibold text-xs shadow-inner">
-                  {userName.charAt(0)}
-                </div>
-              )}
-              {/* Online indicator */}
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-            </div>
 
-            <div className="hidden lg:flex flex-col text-left">
-              <span className="text-xs font-semibold text-slate-800 leading-tight">
+          <div className="hidden lg:flex items-center gap-3 rounded-full border border-slate-200 bg-white p-1.5 pl-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                {userName ? userName.charAt(0).toUpperCase() : "U"}
+              </div>
+              <span className="text-xs font-semibold text-slate-800 max-w-[120px] truncate">
                 {userName}
               </span>
-              {/* <span className="text-[10px] font-medium text-slate-400 leading-none">
-                Instructor
-              </span> */}
             </div>
-
-            <ChevronDownIcon className="w-3.5 h-3.5 text-slate-400 hidden lg:block" />
-          </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center rounded-full bg-slate-100 p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition"
+              title="Logout"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </header>

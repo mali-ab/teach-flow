@@ -6,6 +6,7 @@ import Home from "../pages/Home";
 import JoinMeeting from "../pages/JoinMeeting";
 import Login from "../pages/Login";
 import MeetingRoom from "../pages/MeetingRoom";
+
 import Register from "../pages/Register";
 
 export const router = createBrowserRouter([

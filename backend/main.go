@@ -66,6 +66,18 @@ type MeetingParticipantPayload struct {
   IsScreenSharing bool   `json:"isScreenSharing"`
 }
 
+type ChatMessage struct {
+  ID        int64     `json:"id"`
+  Sender    string    `json:"sender"`
+  Text      string    `json:"text"`
+  TimeStamp string    `json:"time"`
+}
+
+type MeetingChatSendPayload struct {
+  Text string `json:"text"`
+}
+
+
 type RoomParticipant struct {
   ID              string `json:"id"`
   Name            string `json:"name"`
@@ -87,7 +99,9 @@ type LoginPayload struct {
 
 type TokenResponse struct {
   Token string `json:"token"`
+  User  *User  `json:"user,omitempty"`
 }
+
 
 type JoinResponse struct {
   URL      string `json:"url,omitempty"`
@@ -313,8 +327,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  writeJSON(w, http.StatusOK, TokenResponse{Token: createSession(user.ID)})
+  writeJSON(w, http.StatusOK, TokenResponse{
+    Token: createSession(user.ID),
+    User: &User{ID: user.ID, Name: user.Name, Email: user.Email},
+  })
 }
+
 
 func createMeetingHandler(w http.ResponseWriter, r *http.Request) {
   if r.Method == http.MethodOptions {
@@ -343,14 +361,16 @@ func createMeetingHandler(w http.ResponseWriter, r *http.Request) {
   }
 
   meeting := &Meeting{
-    ID:             randomID(12),
-    RoomName:       generateRoomName(payload.Title),
+    ID:             randomID(36),
+    // UUID-like opaque room code (client uses it in /meeting/:id)
+    RoomName:       randomID(36),
     Title:          payload.Title,
     Description:    payload.Description,
     ScheduledAt:    payload.ScheduledAt,
     DurationMinutes: payload.DurationMinutes,
     CreatedAt:      time.Now().UTC().Format(time.RFC3339),
   }
+
 
   if err := insertMeeting(meeting); err != nil {
     writeError(w, http.StatusInternalServerError, "failed to save meeting")
