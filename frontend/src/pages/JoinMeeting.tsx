@@ -33,9 +33,7 @@ export default function JoinMeeting() {
     try {
       const response = await api.get(`/meetings/${cleanId}/join`);
 
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      } else if (response.data?.room_name || response.data?.id) {
+      if (response.data?.room_name || response.data?.id) {
         navigate(`/meeting/${encodeURIComponent(response.data.room_name || response.data.id)}`);
       } else {
         navigate(`/meeting/${encodeURIComponent(cleanId)}`);

@@ -16,8 +16,10 @@ import (
   "net/url"
   "os"
   "strings"
+  "sync"
   "time"
 
+  "github.com/joho/godotenv"
   _ "github.com/lib/pq"
 )
 
@@ -59,6 +61,19 @@ type CreateMeetingPayload struct {
   DurationMinutes int    `json:"durationMinutes,omitempty"`
 }
 
+type MeetingParticipantPayload struct {
+  ParticipantID   string `json:"participantId,omitempty"`
+  IsScreenSharing bool   `json:"isScreenSharing"`
+}
+
+type RoomParticipant struct {
+  ID              string `json:"id"`
+  Name            string `json:"name"`
+  JoinedAt        string `json:"joinedAt"`
+  IsScreenSharing bool   `json:"isScreenSharing"`
+  LastSeen        time.Time `json:"-"`
+}
+
 type RegisterPayload struct {
   Name     string `json:"name"`
   Email    string `json:"email"`
@@ -89,9 +104,16 @@ type contextKey string
 var (
   config AppConfig
   db     *sql.DB
+
+  participantStoreMu sync.RWMutex
+  participantStore   = make(map[string]map[string]RoomParticipant)
 )
 
 func main() {
+  if err := godotenv.Load(); err != nil {
+    log.Printf("no .env file loaded: %v", err)
+  }
+
   loadConfig()
   initDB()
   seedDefaultUser()
@@ -115,17 +137,22 @@ func loadConfig() {
     port = "8080"
   }
 
+  host := os.Getenv("BACKEND_HOST")
+  if host == "" {
+    host = "0.0.0.0"
+  }
+
   config = AppConfig{
-    ListenAddr:      fmt.Sprintf(":%s", port),
+    ListenAddr:      fmt.Sprintf("%s:%s", host, port),
     PasswordSalt:    getEnv("PASSWORD_SALT", "teachflow-salt"),
     JitsiBaseURL:    getEnv("JITSI_BASE_URL", "http://localhost:8000"),
     JitsiAppID:      os.Getenv("JITSI_APP_ID"),
     JitsiAppSecret:  os.Getenv("JITSI_APP_SECRET"),
     TokenTTLSeconds: 86400,
-    DBHost:         getEnv("POSTGRES_HOST", "localhost"),
-    DBPort:         getEnv("POSTGRES_PORT", "5432"),
-    DBUser:         getEnv("POSTGRES_USER", "teachflow"),
-    DBPassword:     getEnv("POSTGRES_PASSWORD", "teachflow"),
+    DBHost:         getEnv("POSTGRES_HOST", "127.0.0.1"),
+    DBPort:         getEnv("POSTGRES_PORT", "5433"),
+    DBUser:         getEnv("POSTGRES_USER", "postgres"),
+    DBPassword:     getEnv("POSTGRES_PASSWORD", "Qwerty1234"),
     DBName:         getEnv("POSTGRES_DB", "teachflow"),
   }
 }
@@ -340,18 +367,37 @@ func meetingPathHandler(w http.ResponseWriter, r *http.Request) {
 
   path := strings.TrimPrefix(r.URL.Path, "/api/meetings/")
   parts := strings.Split(path, "/")
-  if len(parts) != 2 || parts[1] != "join" {
-    writeError(w, http.StatusNotFound, "endpoint not found")
-    return
-  }
-
   roomName := strings.TrimSpace(parts[0])
   if roomName == "" {
     writeError(w, http.StatusBadRequest, "meeting id is required")
     return
   }
 
-  joinMeetingHandler(w, r, roomName)
+  if len(parts) == 2 && parts[1] == "join" {
+    joinMeetingHandler(w, r, roomName)
+    return
+  }
+
+  if len(parts) == 2 && parts[1] == "participants" {
+    switch r.Method {
+    case http.MethodGet:
+      listParticipantsHandler(w, r, roomName)
+    case http.MethodPost:
+      upsertParticipantHandler(w, r, roomName)
+    default:
+      writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+    }
+    return
+  }
+
+  if len(parts) == 3 && parts[1] == "participants" {
+    if r.Method == http.MethodDelete {
+      removeParticipantHandler(w, r, roomName, parts[2])
+      return
+    }
+  }
+
+  writeError(w, http.StatusNotFound, "endpoint not found")
 }
 
 func joinMeetingHandler(w http.ResponseWriter, r *http.Request, roomName string) {
@@ -367,6 +413,78 @@ func joinMeetingHandler(w http.ResponseWriter, r *http.Request, roomName string)
     RoomName: roomName,
     ID:       roomName,
   })
+}
+
+func upsertParticipantHandler(w http.ResponseWriter, r *http.Request, roomName string) {
+  currentUser := r.Context().Value(contextKey("user")).(*User)
+  if currentUser == nil {
+    writeError(w, http.StatusUnauthorized, "not authorized")
+    return
+  }
+
+  var payload MeetingParticipantPayload
+  if err := decodeJSONBody(r, &payload); err != nil {
+    writeError(w, http.StatusBadRequest, err.Error())
+    return
+  }
+
+  participantID := strings.TrimSpace(payload.ParticipantID)
+  if participantID == "" {
+    participantID = randomID(8)
+  }
+
+  now := time.Now().UTC()
+  participantStoreMu.Lock()
+  if participantStore[roomName] == nil {
+    participantStore[roomName] = make(map[string]RoomParticipant)
+  }
+  participantStore[roomName][participantID] = RoomParticipant{
+    ID:              participantID,
+    Name:            currentUser.Name,
+    JoinedAt:        now.Format(time.RFC3339),
+    IsScreenSharing: payload.IsScreenSharing,
+    LastSeen:        now,
+  }
+  participantStoreMu.Unlock()
+
+  listParticipantsHandler(w, r, roomName)
+}
+
+func listParticipantsHandler(w http.ResponseWriter, r *http.Request, roomName string) {
+  participantStoreMu.Lock()
+  defer participantStoreMu.Unlock()
+
+  participants := make([]RoomParticipant, 0)
+  roomParticipants := participantStore[roomName]
+  if roomParticipants == nil {
+    writeJSON(w, http.StatusOK, map[string]any{"participants": participants})
+    return
+  }
+
+  now := time.Now().UTC()
+  for _, participant := range roomParticipants {
+    if now.Sub(participant.LastSeen) > 20*time.Second {
+      delete(roomParticipants, participant.ID)
+      continue
+    }
+    participants = append(participants, participant)
+  }
+
+  writeJSON(w, http.StatusOK, map[string]any{"participants": participants})
+}
+
+func removeParticipantHandler(w http.ResponseWriter, r *http.Request, roomName, participantID string) {
+  participantStoreMu.Lock()
+  defer participantStoreMu.Unlock()
+
+  if roomParticipants := participantStore[roomName]; roomParticipants != nil {
+    delete(roomParticipants, participantID)
+    if len(roomParticipants) == 0 {
+      delete(participantStore, roomName)
+    }
+  }
+
+  writeJSON(w, http.StatusOK, map[string]any{"participants": []RoomParticipant{}})
 }
 
 func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -598,8 +716,15 @@ func decodeJSONBody(r *http.Request, dst any) error {
 
 func withCORS(next http.HandlerFunc) http.HandlerFunc {
   return func(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    origin := r.Header.Get("Origin")
+    if origin != "" {
+      w.Header().Set("Access-Control-Allow-Origin", origin)
+      w.Header().Set("Access-Control-Allow-Credentials", "true")
+      w.Header().Set("Vary", "Origin")
+    } else {
+      w.Header().Set("Access-Control-Allow-Origin", "*")
+    }
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
     w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
     if r.Method == http.MethodOptions {
       w.WriteHeader(http.StatusNoContent)

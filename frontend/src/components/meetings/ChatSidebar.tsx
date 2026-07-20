@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 
 interface ChatSidebarProps {
+  messages: Message[];
+  onSendMessage: (text: string) => void;
   onClose: () => void;
 }
 
@@ -13,27 +15,23 @@ interface Message {
   isSelf?: boolean;
 }
 
-export default function ChatSidebar({ onClose }: ChatSidebarProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: "Dr. Sarah Jenkins", text: "Welcome everyone to CS-101!", time: "10:00 AM" },
-    { id: 2, sender: "Alex Rivera", text: "Can you share the slides later?", time: "10:02 AM" },
-  ]);
+export default function ChatSidebar({ messages, onSendMessage, onClose }: ChatSidebarProps) {
   const [inputMessage, setInputMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const formatTime = () => {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: "You",
-        text: inputMessage,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        isSelf: true,
-      },
-    ]);
+    onSendMessage(inputMessage.trim());
     setInputMessage("");
   };
 
@@ -52,26 +50,33 @@ export default function ChatSidebar({ onClose }: ChatSidebarProps) {
 
       {/* Messages List */}
       <div className="flex-1 p-4 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-slate-800">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex flex-col ${msg.isSelf ? "items-end" : "items-start"}`}
-          >
-            <div className="flex items-center space-x-2 mb-1">
-              <span className="text-[11px] font-medium text-slate-400">{msg.sender}</span>
-              <span className="text-[10px] text-slate-500">{msg.time}</span>
-            </div>
-            <div
-              className={`max-w-[85%] text-xs px-3 py-2 rounded-xl ${
-                msg.isSelf
-                  ? "bg-emerald-600 text-white rounded-br-none"
-                  : "bg-slate-800 text-slate-200 border border-slate-700/60 rounded-bl-none"
-              }`}
-            >
-              {msg.text}
-            </div>
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-950/50 text-center text-xs text-slate-500">
+            No messages yet. Start the conversation.
           </div>
-        ))}
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex flex-col ${msg.isSelf ? "items-end" : "items-start"}`}
+            >
+              <div className="mb-1 flex items-center space-x-2">
+                <span className="text-[11px] font-medium text-slate-400">{msg.sender}</span>
+                <span className="text-[10px] text-slate-500">{msg.time}</span>
+              </div>
+              <div
+                className={`max-w-[85%] rounded-xl px-3 py-2 text-xs ${
+                  msg.isSelf
+                    ? "rounded-br-none bg-emerald-600 text-white"
+                    : "rounded-bl-none border border-slate-700/60 bg-slate-800 text-slate-200"
+                }`}
+              >
+                {msg.text}
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Box */}

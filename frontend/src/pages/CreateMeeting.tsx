@@ -22,7 +22,7 @@ export default function CreateMeeting() {
     try {
       const response = await api.post<MeetingResponse>("/meetings", formData);
       const roomPath = response.data.roomName
-        ? `/room/${response.data.roomName}`
+        ? `/meeting/${response.data.roomName}`
         : "/dashboard";
 
       navigate(roomPath);
