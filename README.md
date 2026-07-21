@@ -9,14 +9,8 @@
 * **High-Performance Backend**: Developed with Go (Golang) for rapid response times and scalable API handling.
 * **Modern Minimalistic UI**: Built using React, TypeScript, and Tailwind CSS with custom glassmorphic styling.
 * **Integrated Video Conferencing**: Embedded Jitsi Meet WebRTC platform for smooth audio/video calling, screen sharing, and interactive meetings.
-* 
-**Real-time Chat & Roster Management**: In-meeting chat powered by Jitsi's XMPP/Prosody data routing along with real-time participant sidebars.
-
-
-* 
-**Authentication & Dashboard**: Secure user authorization flow via Axios alongside intuitive meeting management dashboards.
-
-
+* **Real-time Chat & Roster Management**: In-meeting chat powered by Jitsi's XMPP/Prosody data routing along with real-time participant sidebars.
+* **Authentication & Dashboard**: Secure user authorization flow via Axios alongside intuitive meeting management dashboards.
 
 ---
 
@@ -25,10 +19,7 @@
 * **Frontend**: React, TypeScript, Tailwind CSS, Axios, React Router
 * **Backend**: Go (Golang)
 * **Media & Signaling**: Jitsi Meet (JVB, Jicofo, Prosody) embedded via Jitsi External API
-* 
-**Containerization**: Docker & Docker Compose 
-
-
+* **Containerization**: Docker & Docker Compose 
 
 ---
 
@@ -65,8 +56,6 @@ Ensure you have the following installed on your machine:
 * [Go](https://golang.org/) (v1.20+)
 * 
 [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) 
-
-
 
 ---
 
