@@ -30,6 +30,7 @@ export default function MeetingRoom() {
     localParticipantId,
     isConnected,
     conferenceError,
+    kickedOut,
     joinConference,
     leaveConference,
     toggleAudio,
@@ -116,6 +117,13 @@ export default function MeetingRoom() {
     setJitsiJoined(true);
     joinConference({ roomName, displayName, url: joinUrl });
   }, [joinUrl, jitsiJoined, roomName, displayName, joinConference]);
+
+  // Redirect to dashboard if kicked out of the meeting
+  useEffect(() => {
+    if (kickedOut) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [kickedOut, navigate]);
 
   const currentParticipants = useMemo<Participant[]>(() => {
     return jitsiParticipants.map((jp) => ({

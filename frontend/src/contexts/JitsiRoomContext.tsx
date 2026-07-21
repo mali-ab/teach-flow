@@ -29,6 +29,7 @@ type JitsiContextValue = {
   localParticipantId: string | null;
   isConnected: boolean;
   conferenceError: string | null;
+  kickedOut: boolean;
   joinConference: (options: {
     roomName: string;
     displayName: string;
@@ -110,6 +111,7 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [kickedOut, setKickedOut] = useState(false);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const messageIdCounter = useRef(0);
@@ -157,6 +159,7 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAudioMuted(false);
       setIsVideoOff(false);
       setIsScreenSharing(false);
+      setKickedOut(false);
       setChatMessages([]);
       messageIdCounter.current = 0;
     };
@@ -182,6 +185,7 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
       setConferenceError(null);
       setIsConnected(false);
       setParticipants([]);
+      setKickedOut(false);
 
       try {
         const parsed = new URL(url);
@@ -316,6 +320,48 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
             },
           ]);
         });
+
+        api.addEventListener("participantKickedOut", () => {
+          const kickedApi = apiRef.current;
+          if (kickedApi) {
+            try {
+              kickedApi.dispose();
+            } catch {
+              // ignore
+            }
+            apiRef.current = null;
+          }
+          setIsConnected(false);
+          setConferenceError(null);
+          setParticipants([]);
+          setLocalParticipantId(null);
+          setIsAudioMuted(false);
+          setIsVideoOff(false);
+          setIsScreenSharing(false);
+          setChatMessages([]);
+          messageIdCounter.current = 0;
+          setKickedOut(true);
+        });
+
+        api.addEventListener("videoConferenceLeft", () => {
+          const leftApi = apiRef.current;
+          if (leftApi) {
+            try {
+              leftApi.dispose();
+            } catch {
+              // ignore
+            }
+            apiRef.current = null;
+          }
+          setIsConnected(false);
+          setParticipants([]);
+          setLocalParticipantId(null);
+          setIsAudioMuted(false);
+          setIsVideoOff(false);
+          setIsScreenSharing(false);
+          setChatMessages([]);
+          messageIdCounter.current = 0;
+        });
       } catch (e: any) {
         setConferenceError(e?.message || "Failed to initialize Jitsi.");
       }
@@ -350,6 +396,7 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
       localParticipantId,
       isConnected,
       conferenceError,
+      kickedOut,
       joinConference,
       leaveConference,
       toggleAudio,
@@ -368,6 +415,7 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
       localParticipantId,
       isConnected,
       conferenceError,
+      kickedOut,
       isAudioMuted,
       isVideoOff,
       isScreenSharing,
