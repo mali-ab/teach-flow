@@ -132,53 +132,61 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <img src="/logo.png" alt="Logo" className="w-32 h-32 object-contain" />
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-32 h-32 object-contain"
+          />
         </section>
 
         {/* Recent Activity Feed */}
-        <section className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
+        {recentActivities.length > 0 && (
+          <section className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900">
+              Recent Activity
+            </h2>
 
-          <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-            {recentActivities.map((activity: ActivityItem) => {
-              const styles = getActivityStyles(activity.type);
-              const IconComponent = styles.icon;
+            <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              {recentActivities.map((activity: ActivityItem) => {
+                const styles = getActivityStyles(activity.type);
+                const IconComponent = styles.icon;
 
-              return (
-                <div
-                  key={activity.id}
-                  className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200/80 transition-all duration-200 mr-1"
-                >
-                  {/* Action Icon Wrapper */}
+                return (
                   <div
-                    className={`p-3 rounded-xl shrink-0 transition-transform duration-200 group-hover:scale-105 ${styles.bg}`}
+                    key={activity.id}
+                    className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200/80 transition-all duration-200 mr-1"
                   >
-                    <IconComponent className="w-5 h-5 sm:w-6 h-6" />
-                  </div>
-
-                  {/* Content Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                      <p className="font-semibold text-slate-800 text-sm sm:text-base truncate">
-                        {activity.title}
-                      </p>
-                      <span className="text-xs text-slate-400 font-medium shrink-0 sm:text-right">
-                        {activity.time}
-                      </span>
+                    {/* Action Icon Wrapper */}
+                    <div
+                      className={`p-3 rounded-xl shrink-0 transition-transform duration-200 group-hover:scale-105 ${styles.bg}`}
+                    >
+                      <IconComponent className="w-5 h-5 sm:w-6 h-6" />
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 truncate">
-                      Room:{" "}
-                      <span className="text-slate-600 font-semibold">
-                        {activity.roomName}
-                      </span>
-                    </p>
+                    {/* Content Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                        <p className="font-semibold text-slate-800 text-sm sm:text-base truncate">
+                          {activity.title}
+                        </p>
+                        <span className="text-xs text-slate-400 font-medium shrink-0 sm:text-right">
+                          {activity.time}
+                        </span>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 truncate">
+                        Room:{" "}
+                        <span className="text-slate-600 font-semibold">
+                          {activity.roomName}
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
