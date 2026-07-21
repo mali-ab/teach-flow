@@ -9,16 +9,15 @@ import {
 
 interface MeetingControlsProps {
   isAudioMuted: boolean;
-  setIsAudioMuted: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setIsAudioMuted: () => void;
   isVideoOff: boolean;
-  setIsVideoOff: (val: boolean | ((prev: boolean) => boolean)) => void;
+  setIsVideoOff: () => void;
   isScreenSharing: boolean;
   setIsScreenSharing: () => void;
   activeSidePanel: "chat" | "participants" | null;
   toggleSidePanel: (panel: "chat" | "participants") => void;
   onLeave?: () => void;
 }
-
 
 export default function MeetingControls({
   isAudioMuted,
@@ -43,7 +42,7 @@ export default function MeetingControls({
       <div className="mx-auto flex items-center gap-2 sm:gap-3">
         <button
           type="button"
-          onClick={() => setIsAudioMuted((prev) => !prev)}
+          onClick={setIsAudioMuted}
           aria-label={isAudioMuted ? "Unmute microphone" : "Mute microphone"}
           className={`${buttonClass} ${
             isAudioMuted
@@ -56,7 +55,7 @@ export default function MeetingControls({
 
         <button
           type="button"
-          onClick={() => setIsVideoOff((prev) => !prev)}
+          onClick={setIsVideoOff}
           aria-label={isVideoOff ? "Turn camera on" : "Turn camera off"}
           className={`${buttonClass} ${
             isVideoOff
@@ -67,11 +66,9 @@ export default function MeetingControls({
           <VideoCameraIcon className="h-5 w-5" />
         </button>
 
-
         <button
           type="button"
           onClick={setIsScreenSharing}
-
           aria-label={isScreenSharing ? "Stop sharing screen" : "Share screen"}
           className={`${buttonClass} ${
             isScreenSharing
@@ -122,3 +119,4 @@ export default function MeetingControls({
     </footer>
   );
 }
+

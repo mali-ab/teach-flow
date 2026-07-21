@@ -14,18 +14,22 @@ import {
 import AuthLayout from "../layouts/AuthLayout";
 import api from "../lib/axios";
 import type { ApiErrorResponse } from "../types/meeting";
+import { useAuth } from "../contexts/AuthContext";
+
+interface RawUser {
+  id: string | number;
+  name: string;
+  email: string;
+}
 
 interface RegisterResponse {
   token?: string;
   message?: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  user?: RawUser;
 }
 
 export default function Register() {
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   // Form states
@@ -63,8 +67,15 @@ export default function Register() {
       });
 
       // If token is returned directly on registration, log them in immediately
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      if (response.data.token && response.data.user) {
+        login(
+          {
+            id: String(response.data.user.id),
+            name: response.data.user.name,
+            email: response.data.user.email,
+          },
+          response.data.token
+        );
         navigate("/dashboard");
       } else {
         // Otherwise redirect to login page

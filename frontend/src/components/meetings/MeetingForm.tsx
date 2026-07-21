@@ -3,6 +3,7 @@ import { VideoCameraIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 
 // Note the 'type' keyword here:
 import type { CreateMeetingPayload } from "../../types/meeting";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface MeetingFormProps {
   onSubmit: (data: CreateMeetingPayload) => void;
@@ -13,13 +14,14 @@ export default function MeetingForm({
   onSubmit,
   isLoading = false,
 }: MeetingFormProps) {
+  const { user } = useAuth();
   const [title, setTitle] = useState<string>("");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    onSubmit({ title: title.trim() });
+    onSubmit({ creator_id: Number(user.id), title: title.trim() });
   };
 
   return (

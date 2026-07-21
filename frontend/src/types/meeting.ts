@@ -1,15 +1,19 @@
 export interface CreateMeetingPayload {
+  creator_id: number;
   title: string;
-  description?: string;
-  scheduledAt?: string;
-  durationMinutes?: number;
 }
 
 export interface MeetingResponse {
-  id: string;
-  roomName: string;
-  title: string;
-  created_at?: string;
+  meeting: {
+    id: number;
+    title: string;
+    created_at: string;
+  };
+  room: {
+    server_url: string;
+    room_name: string;
+    join_url: string;
+  };
 }
 
 export interface ApiErrorResponse {

@@ -1,133 +1,143 @@
-# TeachFlow 🎥✨
+# TeachFlow
 
-A sleek, lightweight, and minimalistic online video conferencing platform. This application integrates a high-performance **Go (Golang)** backend with a modern **React & TypeScript** frontend, embedding **Jitsi Meet** for seamless, low-latency video and audio communication.
+> **TeachFlow** is a sleek, lightweight, and minimalistic online video conferencing platform. This application integrates a high-performance **Go (Golang)** backend with a modern **React & TypeScript** frontend, embedding **Jitsi Meet** for seamless, low-latency video and audio communication.
 
 ---
 
 ## 🚀 Key Features
 
-- **Instant Meetings:** Create or join public/private conference rooms instantly.
-- **Minimalistic UI:** Clean, distraction-free interface built with React & TypeScript.
-- **Secure Video/Audio:** Robust, encrypted communications powered by Jitsi Meet.
-- **Lightweight Backend:** Fast Go backend handling session logic, room token generation (JWT if configured), and route management.
-- **Responsive Design:** Optimized for both desktop and mobile web viewports.
+* **High-Performance Backend**: Developed with Go (Golang) for rapid response times and scalable API handling.
+* **Modern Minimalistic UI**: Built using React, TypeScript, and Tailwind CSS with custom glassmorphic styling.
+* **Integrated Video Conferencing**: Embedded Jitsi Meet WebRTC platform for smooth audio/video calling, screen sharing, and interactive meetings.
+* 
+**Real-time Chat & Roster Management**: In-meeting chat powered by Jitsi's XMPP/Prosody data routing along with real-time participant sidebars.
+
+
+* 
+**Authentication & Dashboard**: Secure user authorization flow via Axios alongside intuitive meeting management dashboards.
+
+
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Tech Stack
 
-- **Frontend:** React, TypeScript, Vite (or Create React App), `@jitsi/react-sdk`
-- **Backend:** Go (Golang), Fiber / Gin (HTTP framework), JWT (for secure Jitsi authentication)
-- **Video Engine:** Jitsi Meet (Self-hosted or Public Meet Instance)
+* **Frontend**: React, TypeScript, Tailwind CSS, Axios, React Router
+* **Backend**: Go (Golang)
+* **Media & Signaling**: Jitsi Meet (JVB, Jicofo, Prosody) embedded via Jitsi External API
+* 
+**Containerization**: Docker & Docker Compose 
+
+
 
 ---
 
-## 📁 Repository Structure
+## 📂 Project Structure
 
 ```text
-├── backend/               # Go API server
-│   ├── main.go            # Entry point
-│   ├── handlers/          # Room & Token controller logic
-│   ├── go.mod             # Go dependencies
-│   └── .env.example       # Backend environment variables
-│
-├── frontend/              # React + TypeScript App
+teachflow/
+├── backend/                  # Go (Golang) API server & REST controllers
+│   ├── main.go               # Application entrypoint & HTTP routes
+│   └── ...
+├── frontend/                 # React & TypeScript client application
 │   ├── src/
-│   │   ├── components/    # Meeting UI, Jitsi Frame wrapper
-│   │   ├── App.tsx        # Main routing & layout
-│   │   └── main.tsx       # TSX entrypoint
-│   ├── package.json       # Frontend dependencies
-│   └── .env.example       # Frontend environment variables
-│
-└── README.md              # Project documentation
+│   │   ├── components/       # Reusable UI widgets & meeting controls
+│   │   │   ├── dashboard/    # Dashboard statistics & activity cards
+│   │   │   └── meetings/     # Video grid, header, chat, and participant sidebars
+│   │   ├── contexts/         # React Contexts (AuthContext, JitsiRoomContext)
+│   │   ├── lib/              # Axios instance configuration
+│   │   ├── pages/            # Views (Dashboard, MeetingRoom, Login, NotFound)
+│   │   └── App.tsx
+│   └── package.json
+└── docker/                   # Docker deployment configurations for Jitsi Meet
+
 ```
 
-⚙️ Getting Started
-Prerequisites
-Go (v1.18+)
+---
 
-Node.js (v18+) & npm / yarn / pnpm
+## 🛠️ Getting Started
 
-A Jitsi Meet Server instance (or default to meet.jit.si for development)
+### Prerequisites
 
-1. Backend Setup (Go)
-Navigate to the backend directory:
+Ensure you have the following installed on your machine:
 
-Bash
+* [Node.js](https://nodejs.org/) (v18+) & `npm` / `yarn`
+* [Go](https://golang.org/) (v1.20+)
+* 
+[Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) 
+
+
+
+---
+
+### Setup Instructions
+
+#### 1. Go Backend Setup
+
+```bash
+# Navigate to backend directory
 cd backend
-Copy the example environment file and configure your port:
 
-Bash
-cp .env.example .env
-Install dependencies and start the Go server:
-
-Bash
+# Install Go dependencies
 go mod tidy
+
+# Start the Go server
 go run main.go
-The backend should now be running on http://localhost:8080.
 
-2. Frontend Setup (React + TypeScript)
-Navigate to the frontend directory:
+```
 
-Bash
-cd ../frontend
-Copy the example environment file and define your Go backend URL & Jitsi Domain:
+#### 2. React Frontend Setup
 
-Bash
-cp .env.example .env
-(Example variables inside .env:)
+```bash
+# Navigate to frontend directory
+cd frontend
 
-Фрагмент кода
-VITE_BACKEND_URL=http://localhost:8080
-VITE_JITSI_DOMAIN=meet.jit.si
-Install the dependencies:
-
-Bash
+# Install Node dependencies
 npm install
-Start the development server:
 
-Bash
+# Create local environment configuration
+cp .env.example .env
+
+# Start the Vite development server
 npm run dev
-The client app should now be live on http://localhost:5173 (or http://localhost:3000).
 
-🔗 How Jitsi is Embedded (React/TS)
-We utilize the official Jitsi Meet React SDK to render the iframe dynamically. Below is the core integration pattern:
+```
 
-TypeScript
-import React from 'react';
-import { JitsiMeeting } from '@jitsi/react-sdk'; //
+#### 3. Jitsi Meet Docker Setup
 
-interface MeetingProps {
-  roomName: string;
-  userName: string;
-}
+For local WebRTC media routing, deploy the stable Jitsi stack using Docker:
 
-export const VideoConference: React.FC<MeetingProps> = ({ roomName, userName }) => {
-  return (
-    <div style={{ height: '100vh', width: '100%' }}>
-      <JitsiMeeting 'meet.jit.si'} // DISABLE_JOIN_LEAVE_NOTIFICATIONS: configOverwrite="{{" disableModeratorIndicator: displayName: domain="{import.meta.env.VITE_JITSI_DOMAIN" false, getIFrameRef="{(iframeRef)" interfaceConfigOverwrite="{{" roomName="{roomName}" startScreenSharing: startWithAudioMuted: true, userInfo="{{" userName, || }}> {
-          iframeRef.style.height = '100%';
-          iframeRef.style.width = '100%';
-        }} //
-      />
-    </div>
-  );
-};
-🐳 Running with Docker (Production Optional)
-If you have a customized Docker-compose Jitsi setup alongside this application, make sure your host directories are writable:
+```bash
+# Navigate to jitsi directory
+cd jitsi
 
-Bash
-# If running Jitsi in Docker and facing permission blocks
-sudo chown -R 1000:1000 ~/.jitsi-meet-cfg
-sudo chmod -R 775 ~/.jitsi-meet-cfg
-🔒 Security & JWT (Optional)
-If your self-hosted Jitsi instance is protected, your Go backend can sign securely signed JWTs (JSON Web Tokens).
+# Clone the official Docker Jitsi setup if running self-hosted media server
+git clone https://github.com/jitsi/docker-jitsi-meet.git
+cd docker-jitsi-meet
 
-When a user requests to join Room-A, the React app hits /api/token on the Go backend.
+# Create environment template and auto-fill secure passwords
+cp env.example .env
+./gen-passwords.sh
 
-The Go backend validates the request, signs a token using your JITSI_APP_SECRET, and returns the token.
+# Start Jitsi Meet services
+docker compose up -d
 
-React passes this token to the jwt prop inside <JitsiMeeting jwt={token} />.
+```
 
-📄 License
-This project is licensed under the MIT License. Feel free to use, modify, and distribute.
+---
+
+## 🔐 Environment Variables
+
+### Frontend `.env`
+
+```env
+VITE_API_BASE_URL=http://localhost:8081
+VITE_JITSI_DOMAIN=meet.jit.si
+
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

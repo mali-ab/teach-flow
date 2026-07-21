@@ -13,18 +13,22 @@ import {
 import AuthLayout from "../layouts/AuthLayout";
 import api from "../lib/axios";
 import type { ApiErrorResponse } from "../types/meeting";
+import { useAuth } from "../contexts/AuthContext";
+
+interface RawUser {
+  id: string | number;
+  name: string;
+  email: string;
+}
 
 interface LoginResponse {
   token: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  user?: RawUser;
   message?: string;
 }
 
 export default function Login() {
+  const { user, login } = useAuth();
   const navigate = useNavigate();
 
   // Form states
@@ -53,26 +57,18 @@ export default function Login() {
         password,
       });
 
-      // Save token to localStorage for authorization interceptors
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      }
-
       // Persist user info for AuthContext-driven UI
-      // Backend now returns { token, user }
-      if (response.data.user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            id: response.data.user.id,
+      // AuthContext.login() handles saving token + user to localStorage
+      if (response.data.token && response.data.user) {
+        login(
+          {
+            id: String(response.data.user.id),
             name: response.data.user.name,
             email: response.data.user.email,
-            // Backend Role isn't returned yet; default to teacher.
-            role: "teacher" as const,
-          })
+          },
+          response.data.token
         );
       }
-
 
       // Redirect to dashboard upon successful authentication
       navigate("/dashboard");

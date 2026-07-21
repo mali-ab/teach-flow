@@ -1,0 +1,14 @@
+CREATE TABLE users (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+);
+
+CREATE TABLE meetings (
+    id BIGSERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    room_name TEXT NOT NULL UNIQUE,
+    creator_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

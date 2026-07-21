@@ -6,13 +6,10 @@ import React, {
   useState,
 } from "react";
 
-export type Role = "student" | "teacher" | "admin";
-
 export type AuthUser = {
-  id: string;
+  id: number | string;
   name: string;
   email: string;
-  role: Role;
 };
 
 type AuthContextValue = {
@@ -28,8 +25,21 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = "token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const raw = window.localStorage.getItem("user");
+      return raw ? JSON.parse(raw) as AuthUser : null;
+    } catch {
+      return null;
+    }
+  });
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return window.localStorage.getItem(TOKEN_KEY) || null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_KEY);
@@ -59,11 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(u);
         setToken(t);
         window.localStorage.setItem(TOKEN_KEY, t);
+        window.localStorage.setItem("user", JSON.stringify(u));
       },
       logout: () => {
         setUser(null);
         setToken(null);
         window.localStorage.removeItem(TOKEN_KEY);
+        window.localStorage.removeItem("user");
       },
     };
   }, [user, token]);

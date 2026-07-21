@@ -1,9 +1,33 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+export interface JitsiParticipant {
+  id: string;
+  displayName: string;
+  isAudioMuted: boolean;
+  isVideoOff: boolean;
+  isScreenSharing: boolean;
+}
+
+export interface ChatMessage {
+  id: number;
+  sender: string;
+  text: string;
+  time: string;
+  isSelf?: boolean;
+}
 
 type JitsiContextValue = {
-  /** The Jitsi iframe URL to embed directly */
-  jitsiUrl: string | null;
-  isReady: boolean;
+  participants: JitsiParticipant[];
+  localParticipantId: string | null;
+  isConnected: boolean;
   conferenceError: string | null;
   joinConference: (options: {
     roomName: string;
@@ -11,82 +35,332 @@ type JitsiContextValue = {
     url: string;
   }) => void;
   leaveConference: () => void;
+  toggleAudio: () => void;
+  toggleVideo: () => void;
   toggleScreenShare: () => void;
+  pinParticipant: (id: string | null) => void;
+  isAudioMuted: boolean;
+  isVideoOff: boolean;
+  isScreenSharing: boolean;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  chatMessages: ChatMessage[];
+  sendChatMessage: (text: string) => void;
 };
 
-const JitsiRoomContext = createContext<JitsiContextValue | undefined>(undefined);
+const JitsiRoomContext = createContext<JitsiContextValue | undefined>(
+  undefined,
+);
 
 export function useJitsiRoom() {
   const ctx = useContext(JitsiRoomContext);
-  if (!ctx) throw new Error("useJitsiRoom must be used within JitsiRoomProvider");
+  if (!ctx)
+    throw new Error("useJitsiRoom must be used within JitsiRoomProvider");
   return ctx;
 }
 
-export function JitsiRoomProvider({ children }: { children: React.ReactNode }) {
-  const [jitsiUrl, setJitsiUrl] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+function loadJitsiScript(origin: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).JitsiMeetExternalAPI) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector('script[src*="/external_api.js"]');
+    if (existing) {
+      if ((window as any).JitsiMeetExternalAPI) {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () =>
+        reject(new Error("Failed to load script")),
+      );
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `${origin}/external_api.js`;
+    script.async = true;
+    const timeout = setTimeout(() => {
+      reject(new Error(`Timeout loading Jitsi script from ${origin}`));
+    }, 15000);
+    script.onload = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
+    script.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error(`Failed to load Jitsi script from ${origin}`));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const apiRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const [isConnected, setIsConnected] = useState(false);
   const [conferenceError, setConferenceError] = useState<string | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [participants, setParticipants] = useState<JitsiParticipant[]>([]);
+  const [localParticipantId, setLocalParticipantId] = useState<string | null>(
+    null,
+  );
+
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const messageIdCounter = useRef(0);
+
+  const sendChatMessage = useCallback((text: string) => {
+    if (!apiRef.current) return;
+    apiRef.current.executeCommand("sendChatMessage", text);
+    const id = ++messageIdCounter.current;
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setChatMessages((prev) => [
+      ...prev,
+      { id, sender: "You", text, time, isSelf: true },
+    ]);
+  }, []);
+
+  const updateParticipant = useCallback(
+    (id: string, updates: Partial<JitsiParticipant>) => {
+      setParticipants((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      );
+    },
+    [],
+  );
 
   const leaveConference = useCallback(() => {
-    setJitsiUrl(null);
-    setIsReady(false);
+    try {
+      if (apiRef.current) {
+        apiRef.current.executeCommand("hangup");
+        apiRef.current.dispose();
+      }
+    } catch {
+      /* ignore */
+    }
+    apiRef.current = null;
+    setIsConnected(false);
     setConferenceError(null);
+    setParticipants([]);
+    setLocalParticipantId(null);
+    setIsAudioMuted(false);
+    setIsVideoOff(false);
+    setIsScreenSharing(false);
+    setChatMessages([]);
+    messageIdCounter.current = 0;
   }, []);
 
   const joinConference = useCallback(
-    ({ roomName, displayName, url }: { roomName: string; displayName: string; url: string }) => {
+    async ({
+      roomName,
+      displayName,
+      url,
+    }: {
+      roomName: string;
+      displayName: string;
+      url: string;
+    }) => {
+      if (!containerRef.current) {
+        setConferenceError("DOM element container reference is not ready.");
+        return;
+      }
+
       setConferenceError(null);
-      setIsReady(false);
+      setIsConnected(false);
+      setParticipants([]);
 
       try {
-        // Build the Jitsi URL with config parameters for a clean embed
-        const jitsiUrlObj = new URL(url);
+        const parsed = new URL(url);
+        await loadJitsiScript(parsed.origin);
 
-        // Add config parameters
-        jitsiUrlObj.searchParams.set("jwt", "");
-        jitsiUrlObj.searchParams.set("config.prejoinPageEnabled", "false");
-        jitsiUrlObj.searchParams.set("config.disableDeepLinking", "true");
-        jitsiUrlObj.searchParams.set("interfaceConfig.DEFAULT_BACKGROUND", "#020617");
-        jitsiUrlObj.searchParams.set("interfaceConfig.SHOW_JITSI_WATERMARK", "false");
-        jitsiUrlObj.searchParams.set("interfaceConfig.SHOW_WATERMARK_FOR_GUESTS", "false");
-        jitsiUrlObj.searchParams.set("interfaceConfig.TOOLBAR_ALWAYS_VISIBLE", "false");
-        jitsiUrlObj.searchParams.set("userInfo.displayName", displayName);
+        const JitsiMeetExternalAPI = (window as any).JitsiMeetExternalAPI;
+        if (!JitsiMeetExternalAPI)
+          throw new Error("Jitsi external API not available.");
 
-        const finalUrl = jitsiUrlObj.toString();
-        setJitsiUrl(finalUrl);
+        const api = new JitsiMeetExternalAPI(parsed.host, {
+          roomName,
+          parentNode: containerRef.current,
+          width: "100%",
+          height: "100%",
+          userInfo: { displayName },
+          configOverwrite: {
+            disableDeepLinking: true,
+            prejoinPageEnabled: false,
+            prejoinConfig: {
+              enabled: false,
+            },
+            startWithAudioMuted: false,
+            startWithVideoMuted: false,
+            toolbarButtons: [],
+          },
+          interfaceConfigOverwrite: {
+            SHOW_JITSI_WATERMARK: false,
+            SHOW_WATERMARK_FOR_GUESTS: false,
+            SHOW_BRAND_WATERMARK: false,
+            SHOW_POWERED_BY: false,
+            SHOW_TOOLBAR: false,
+            TOOLBAR_ALWAYS_VISIBLE: false,
+            DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+            FILM_STRIP_MAX_HEIGHT: 0,
+          },
+        });
 
-        // Wait for the iframe to load, then set ready
-        // The iframe will be rendered by the consumer
-        setIsReady(true);
+        apiRef.current = api;
+
+        api.addEventListener("videoConferenceJoined", (payload: any) => {
+          setIsConnected(true);
+          const myId = payload?.id || "local";
+          setLocalParticipantId(myId);
+
+          setParticipants((prev) => {
+            if (prev.some((p) => p.id === myId)) return prev;
+            return [
+              {
+                id: myId,
+                displayName: displayName || "You",
+                isAudioMuted: false,
+                isVideoOff: false,
+                isScreenSharing: false,
+              },
+              ...prev,
+            ];
+          });
+        });
+
+        api.addEventListener("participantJoined", (payload: any) => {
+          setParticipants((prev) => {
+            if (prev.some((p) => p.id === payload.id)) return prev;
+            return [
+              ...prev,
+              {
+                id: payload.id,
+                displayName: payload.displayName || "Guest",
+                isAudioMuted: false,
+                isVideoOff: false,
+                isScreenSharing: false,
+              },
+            ];
+          });
+        });
+
+        api.addEventListener("participantLeft", (payload: any) => {
+          setParticipants((prev) => prev.filter((p) => p.id !== payload.id));
+        });
+
+        api.addEventListener("displayNameChange", (payload: any) => {
+          if (payload?.id) {
+            updateParticipant(payload.id, {
+              displayName: payload.displayname || "Guest",
+            });
+          }
+        });
+
+        api.addEventListener("audioMuteStatusChanged", (payload: any) => {
+          const tid = payload?.id || apiRef.current?._myUserID || "local";
+          const isLocal =
+            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+          if (isLocal) setIsAudioMuted(payload.muted);
+          updateParticipant(tid, { isAudioMuted: payload.muted });
+        });
+
+        api.addEventListener("videoMuteStatusChanged", (payload: any) => {
+          const tid = payload?.id || apiRef.current?._myUserID || "local";
+          const isLocal =
+            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+          if (isLocal) setIsVideoOff(payload.muted);
+          updateParticipant(tid, { isVideoOff: payload.muted });
+        });
+
+        api.addEventListener("screenShareStatusChanged", (payload: any) => {
+          const tid = payload?.id || apiRef.current?._myUserID || "local";
+          const isLocal =
+            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+          if (isLocal) setIsScreenSharing(payload.on);
+          updateParticipant(tid, { isScreenSharing: payload.on });
+        });
+
+        api.addEventListener("incomingMessage", (payload: any) => {
+          const id = ++messageIdCounter.current;
+          const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              id,
+              sender: payload?.nick || "Participant",
+              text: payload?.message || "",
+              time,
+              isSelf: false,
+            },
+          ]);
+        });
       } catch (e: any) {
-        setConferenceError(e?.message || "Failed to build Jitsi meeting URL.");
+        setConferenceError(e?.message || "Failed to initialize Jitsi.");
       }
     },
-    []
+    [updateParticipant],
   );
 
-  const toggleScreenShare = useCallback(() => {
-    // When using direct iframe embed, screen share is handled by Jitsi's own UI
-    // No additional API call needed
-  }, []);
+  const toggleAudio = useCallback(
+    () => apiRef.current?.executeCommand("toggleAudio"),
+    [],
+  );
+  const toggleVideo = useCallback(
+    () => apiRef.current?.executeCommand("toggleVideo"),
+    [],
+  );
+  const toggleScreenShare = useCallback(
+    () => apiRef.current?.executeCommand("toggleShareScreen"),
+    [],
+  );
+  const pinParticipant = useCallback(
+    (id: string | null) => apiRef.current?.executeCommand("pinParticipant", id),
+    [],
+  );
 
   useEffect(() => {
-    return () => {
-      leaveConference();
-    };
+    return () => leaveConference();
   }, [leaveConference]);
 
   const value = useMemo<JitsiContextValue>(
     () => ({
-      jitsiUrl,
-      isReady,
+      participants,
+      localParticipantId,
+      isConnected,
       conferenceError,
       joinConference,
       leaveConference,
+      toggleAudio,
+      toggleVideo,
       toggleScreenShare,
+      pinParticipant,
+      isAudioMuted,
+      isVideoOff,
+      isScreenSharing,
+      containerRef,
+      chatMessages,
+      sendChatMessage,
     }),
-    [jitsiUrl, isReady, conferenceError, joinConference, leaveConference, toggleScreenShare]
+    [
+      participants,
+      localParticipantId,
+      isConnected,
+      conferenceError,
+      isAudioMuted,
+      isVideoOff,
+      isScreenSharing,
+      chatMessages,
+      sendChatMessage,
+      leaveConference,
+      toggleAudio,
+      toggleVideo,
+      toggleScreenShare,
+      pinParticipant,
+    ],
   );
 
   return (
@@ -94,4 +368,4 @@ export function JitsiRoomProvider({ children }: { children: React.ReactNode }) {
       {children}
     </JitsiRoomContext.Provider>
   );
-}
+};

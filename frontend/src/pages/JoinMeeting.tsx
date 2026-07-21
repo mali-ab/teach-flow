@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/axios";
+import type { AxiosError } from "axios";
+import type { MeetingResponse, ApiErrorResponse } from "../types/meeting";
 import {
   VideoCameraIcon,
   LinkIcon,
@@ -31,13 +33,9 @@ export default function JoinMeeting() {
     setError(null);
 
     try {
-      const response = await api.get(`/meetings/${cleanId}/join`);
-
-      if (response.data?.room_name || response.data?.id) {
-        navigate(`/meeting/${encodeURIComponent(response.data.room_name || response.data.id)}`);
-      } else {
-        navigate(`/meeting/${encodeURIComponent(cleanId)}`);
-      }
+      const response = await api.get<MeetingResponse>(`/meetings/join/${cleanId}`);
+      const roomName = response.data.room.room_name;
+      navigate(`/meeting/${encodeURIComponent(roomName)}`);
     } catch (err: any) {
       const serverMessage =
         err.response?.data?.message ||
@@ -53,7 +51,7 @@ export default function JoinMeeting() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
       <DashboardNavbar />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 transition-all">
           {/* Header Icon & Title */}
           <div className="flex flex-col items-center text-center mb-8">

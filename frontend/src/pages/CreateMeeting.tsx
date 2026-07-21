@@ -21,11 +21,8 @@ export default function CreateMeeting() {
 
     try {
       const response = await api.post<MeetingResponse>("/meetings", formData);
-      const roomPath = response.data.roomName
-        ? `/meeting/${response.data.roomName}`
-        : "/dashboard";
-
-      navigate(roomPath);
+      const roomName = response.data.room.room_name;
+      navigate(`/meeting/${encodeURIComponent(roomName)}`);
     } catch (err) {
       const axiosError = err as AxiosError<ApiErrorResponse>;
       setError(

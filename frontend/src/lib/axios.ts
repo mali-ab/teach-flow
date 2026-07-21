@@ -11,9 +11,9 @@ const api: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
 
+// Request Interceptor: Inject Auth Token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -23,6 +23,24 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Catch Global Errors (401, 404, etc.)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response) {
+      const { status } = error.response;
+      
+      if (status === 401) {
+        // Token expired or invalid -> Clear local auth cache
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/login"; 
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;
