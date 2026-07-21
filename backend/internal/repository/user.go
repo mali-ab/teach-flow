@@ -1,72 +1,41 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
-	"teachflow/internal/model"
+	"errors"
+
+	"teachflow/internal/domain"
 
 	"github.com/lib/pq"
 )
 
-type UserRepository struct {
-	db *sql.DB
-}
+type UserRepository struct{ db *sql.DB }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{
-		db: db,
+func NewUserRepository(db *sql.DB) *UserRepository { return &UserRepository{db: db} }
+
+func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
+	const query = `INSERT INTO users(name, email, password_hash) VALUES($1, $2, $3) RETURNING id`
+	err := r.db.QueryRowContext(ctx, query, user.Name, user.Email, user.PasswordHash).Scan(&user.ID)
+	if err == nil {
+		return nil
 	}
-}
-
-func (r *UserRepository) Create(user *model.User) error {
-
-	query := `
-	INSERT INTO users(name, email, password_hash)
-	VALUES($1, $2, $3)
-	RETURNING id
-	`
-
-	err := r.db.QueryRow(
-		query,
-		user.Name,
-		user.Email,
-		user.PasswordHash,
-	).Scan(&user.ID)
-
-	if err != nil {
-
-		if pqErr, ok := err.(*pq.Error); ok {
-
-			if pqErr.Code == "23505" {
-				return ErrEmailExists
-			}
-		}
-
-		return err
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+		return domain.ErrEmailExists
 	}
-
-	return nil
+	return err
 }
 
-func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
-
-	query := `
-	SELECT id, name, email, password_hash
-	FROM users
-	WHERE email = $1
-	`
-
-	var user model.User
-
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.PasswordHash,
-	)
-
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	const query = `SELECT id, name, email, password_hash FROM users WHERE email = $1`
+	user := new(domain.User)
+	err := r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
-
-	return &user, nil
+	return user, nil
 }
