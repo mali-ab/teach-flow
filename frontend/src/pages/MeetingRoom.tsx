@@ -146,14 +146,20 @@ export default function MeetingRoom() {
       />
 
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Jitsi iframe renders here - fills entire flex-1 area */}
         <div
           ref={containerRef}
           id="jitsi-meet-container"
           className="absolute inset-0 w-full h-full"
         />
 
-        {/* Error overlays */}
+        <div className="absolute top-4 left-6 z-10 pointer-events-none flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="TeachFlow Logo"
+            className="h-20 w-auto object-contain drop-shadow-md"
+          />
+        </div>
+
         {error && (
           <div className="absolute top-4 left-4 right-4 z-30 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             {error}
@@ -165,9 +171,8 @@ export default function MeetingRoom() {
           </div>
         )}
 
-        {/* Loading spinner */}
         {loading && !isConnected && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#020617]/80 backdrop-blur-sm">
             <div className="text-sm text-slate-400 flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
               <span>Connecting to meeting room...</span>
@@ -175,7 +180,6 @@ export default function MeetingRoom() {
           </div>
         )}
 
-        {/* Side panels overlay on top right */}
         <div className="absolute top-0 right-0 h-full z-30 p-4">
           {activeSidePanel === "chat" && (
             <ChatSidebar

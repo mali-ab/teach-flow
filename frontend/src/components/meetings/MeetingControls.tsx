@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   MicrophoneIcon,
   VideoCameraIcon,
@@ -5,6 +6,8 @@ import {
   ChatBubbleLeftRightIcon,
   UserGroupIcon,
   PhoneXMarkIcon,
+  LinkIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
 interface MeetingControlsProps {
@@ -30,6 +33,18 @@ export default function MeetingControls({
   toggleSidePanel,
   onLeave,
 }: MeetingControlsProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL: ", err);
+    }
+  };
+
   const buttonClass =
     "flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40";
 
@@ -40,6 +55,26 @@ export default function MeetingControls({
       </div>
 
       <div className="mx-auto flex items-center gap-2 sm:gap-3">
+        {/* Copy Meeting URL Button */}
+        <button
+          type="button"
+          onClick={handleCopyUrl}
+          aria-label="Copy meeting link"
+          title={copied ? "Copied!" : "Copy meeting link"}
+          className={`${buttonClass} ${
+            copied
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : "border-slate-800 bg-slate-900 text-slate-200 hover:bg-slate-800"
+          }`}
+        >
+          {copied ? (
+            <CheckIcon className="h-5 w-5 text-emerald-400" />
+          ) : (
+            <LinkIcon className="h-5 w-5" />
+          )}
+        </button>
+
+        {/* Microphone Button */}
         <button
           type="button"
           onClick={setIsAudioMuted}
@@ -53,6 +88,7 @@ export default function MeetingControls({
           <MicrophoneIcon className="h-5 w-5" />
         </button>
 
+        {/* Camera Button */}
         <button
           type="button"
           onClick={setIsVideoOff}
@@ -66,6 +102,7 @@ export default function MeetingControls({
           <VideoCameraIcon className="h-5 w-5" />
         </button>
 
+        {/* Screen Share Button */}
         <button
           type="button"
           onClick={setIsScreenSharing}
@@ -79,6 +116,7 @@ export default function MeetingControls({
           <ComputerDesktopIcon className="h-5 w-5" />
         </button>
 
+        {/* Leave Meeting Button */}
         <button
           type="button"
           onClick={onLeave}
@@ -90,6 +128,7 @@ export default function MeetingControls({
       </div>
 
       <div className="flex w-1/4 items-center justify-end gap-2">
+        {/* Participants Sidebar Toggle */}
         <button
           type="button"
           onClick={() => toggleSidePanel("participants")}
@@ -103,6 +142,7 @@ export default function MeetingControls({
           <UserGroupIcon className="h-5 w-5" />
         </button>
 
+        {/* Chat Sidebar Toggle */}
         <button
           type="button"
           onClick={() => toggleSidePanel("chat")}
@@ -119,4 +159,3 @@ export default function MeetingControls({
     </footer>
   );
 }
-
