@@ -49,7 +49,7 @@ teachflow/
 │   │   ├── pages/            # Views (Dashboard, MeetingRoom, Login, NotFound)
 │   │   └── App.tsx
 │   └── package.json
-└── docker/                   # Docker deployment configurations for Jitsi Meet
+└── jitsi/                    # Docker deployment configurations for Jitsi Meet
 
 ```
 
