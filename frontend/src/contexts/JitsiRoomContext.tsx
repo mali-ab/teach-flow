@@ -118,7 +118,10 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!apiRef.current) return;
     apiRef.current.executeCommand("sendChatMessage", text);
     const id = ++messageIdCounter.current;
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const time = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     setChatMessages((prev) => [
       ...prev,
       { id, sender: "You", text, time, isSelf: true },
@@ -135,24 +138,30 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const leaveConference = useCallback(() => {
-    try {
-      if (apiRef.current) {
-        apiRef.current.executeCommand("hangup");
-        apiRef.current.dispose();
-      }
-    } catch {
-      /* ignore */
-    }
-    apiRef.current = null;
-    setIsConnected(false);
-    setConferenceError(null);
-    setParticipants([]);
-    setLocalParticipantId(null);
-    setIsAudioMuted(false);
-    setIsVideoOff(false);
-    setIsScreenSharing(false);
-    setChatMessages([]);
-    messageIdCounter.current = 0;
+    const api = apiRef.current;
+
+    if (!api) return;
+
+    api.executeCommand("hangup");
+
+    const handleLeft = () => {
+      api.removeListener("videoConferenceLeft", handleLeft);
+
+      api.dispose();
+      apiRef.current = null;
+
+      setIsConnected(false);
+      setConferenceError(null);
+      setParticipants([]);
+      setLocalParticipantId(null);
+      setIsAudioMuted(false);
+      setIsVideoOff(false);
+      setIsScreenSharing(false);
+      setChatMessages([]);
+      messageIdCounter.current = 0;
+    };
+
+    api.addListener("videoConferenceLeft", handleLeft);
   }, []);
 
   const joinConference = useCallback(
@@ -263,7 +272,9 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
         api.addEventListener("audioMuteStatusChanged", (payload: any) => {
           const tid = payload?.id || apiRef.current?._myUserID || "local";
           const isLocal =
-            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+            tid === apiRef.current?._myUserID ||
+            tid === "local" ||
+            !payload?.id;
           if (isLocal) setIsAudioMuted(payload.muted);
           updateParticipant(tid, { isAudioMuted: payload.muted });
         });
@@ -271,7 +282,9 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
         api.addEventListener("videoMuteStatusChanged", (payload: any) => {
           const tid = payload?.id || apiRef.current?._myUserID || "local";
           const isLocal =
-            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+            tid === apiRef.current?._myUserID ||
+            tid === "local" ||
+            !payload?.id;
           if (isLocal) setIsVideoOff(payload.muted);
           updateParticipant(tid, { isVideoOff: payload.muted });
         });
@@ -279,14 +292,19 @@ export const JitsiRoomProvider: React.FC<{ children: React.ReactNode }> = ({
         api.addEventListener("screenShareStatusChanged", (payload: any) => {
           const tid = payload?.id || apiRef.current?._myUserID || "local";
           const isLocal =
-            tid === apiRef.current?._myUserID || tid === "local" || !payload?.id;
+            tid === apiRef.current?._myUserID ||
+            tid === "local" ||
+            !payload?.id;
           if (isLocal) setIsScreenSharing(payload.on);
           updateParticipant(tid, { isScreenSharing: payload.on });
         });
 
         api.addEventListener("incomingMessage", (payload: any) => {
           const id = ++messageIdCounter.current;
-          const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          const time = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
           setChatMessages((prev) => [
             ...prev,
             {
