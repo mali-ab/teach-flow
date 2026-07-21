@@ -1,6 +1,8 @@
 export interface CreateMeetingPayload {
   creator_id: number;
   title: string;
+  duration_minutes?: number;
+  scheduled_at?: string;
 }
 
 export interface MeetingResponse {

@@ -65,6 +65,7 @@ export default function Login() {
             id: String(response.data.user.id),
             name: response.data.user.name,
             email: response.data.user.email,
+            subscription: "free" as const,
           },
           response.data.token
         );

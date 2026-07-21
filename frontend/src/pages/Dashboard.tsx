@@ -1,122 +1,141 @@
-import React, { useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { NavLink } from "react-router-dom";
 import api from "../lib/axios";
-
-import DashboardNavbar from "../components/dashboard/DashboardNavbar";
-import StatCard from "../components/dashboard/StatCard";
-import UpcomingMeeting from "../components/dashboard/UpcomingMeeting";
-import QuickAction from "../components/dashboard/QuickAction";
 import { useAuth } from "../contexts/AuthContext";
 
 import {
   VideoCameraIcon,
-  CalendarDaysIcon,
-  UserGroupIcon,
   PlusIcon,
   LinkIcon,
   ClockIcon,
-  PlayCircleIcon,
   ArrowLeftOnRectangleIcon,
+  ExclamationCircleIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 
-// Interface for activity items
-interface ActivityItem {
-  id: number;
+// Types & Interfaces
+export type ActivityType = "join" | "leave" | "completed" | "scheduled" | "cancelled";
+
+export interface ActivityItem {
+  id: string | number;
   title: string;
   roomName: string;
   time: string;
-  type: "completed" | "scheduled" | "cancelled";
+  type: ActivityType;
 }
 
+interface RawMeetingResponse {
+  ID?: number | string;
+  Title?: string;
+  RoomName?: string;
+  CreatedAt?: string;
+  Type?: ActivityType;
+}
+
+// Light theme color mappings
+const getActivityConfig = (type: ActivityType) => {
+  switch (type) {
+    case "join":
+      return {
+        icon: VideoCameraIcon,
+        bg: "bg-emerald-50 text-emerald-600 border-emerald-200/60",
+      };
+    case "leave":
+      return {
+        icon: ArrowLeftOnRectangleIcon,
+        bg: "bg-rose-50 text-rose-600 border-rose-200/60",
+      };
+    case "scheduled":
+      return {
+        icon: ClockIcon,
+        bg: "bg-amber-50 text-amber-600 border-amber-200/60",
+      };
+    default:
+      return {
+        icon: VideoCameraIcon,
+        bg: "bg-indigo-50 text-indigo-600 border-indigo-200/60",
+      };
+  }
+};
+
 export const Dashboard: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const displayName = user?.name ?? "";
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const displayName = user?.name ?? "Teacher";
+
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getActivityStyles = (type?: string) => {
-    switch (type) {
-      case "join":
-        return {
-          icon: VideoCameraIcon,
-          bg: "bg-emerald-50 text-emerald-600 border border-emerald-100",
-        };
-      case "leave":
-        return {
-          icon: ArrowLeftOnRectangleIcon,
-          bg: "bg-rose-50 text-rose-600 border border-rose-100",
-        };
-      default:
-        return {
-          icon: ClockIcon,
-          bg: "bg-blue-50 text-blue-600 border border-blue-100",
-        };
-    }
-  };
+  const fetchActivities = useCallback(async (signal?: AbortSignal) => {
+    if (!user?.id) return;
 
-  const getRecentActivities = async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      const response = await api.get(`/meetings/${user?.id}`);
-      const data: any[] = response.data || [];
-      const mapped: ActivityItem[] = data.map((item: any, index: number) => ({
-        id: item.ID || index + 1,
-        title: item.Title || item.RoomName || "Meeting",
-        roomName: item.RoomName || "N/A",
-        time: item.CreatedAt
-          ? new Date(item.CreatedAt).toLocaleString()
-          : "Recently",
-        type: "completed",
-      }));
-      setRecentActivities(mapped);
-    } catch {
-      // fallback: keep empty array
-    }
-  };
+      const response = await api.get<RawMeetingResponse[]>(`/meetings/${user.id}`, { signal });
+      const data = response.data || [];
 
-  useEffect(() => {
-    if (user?.id) {
-      getRecentActivities();
+      const mapped: ActivityItem[] = data.map((item, index) => ({
+        id: item.ID ?? `meeting-${index}`,
+        title: item.Title || item.RoomName || "Classroom Meeting",
+        roomName: item.RoomName || "Default Room",
+        time: item.CreatedAt
+          ? new Date(item.CreatedAt).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Recently",
+        type: item.Type || "completed",
+      }));
+
+      setRecentActivities(mapped);
+    } catch (err: any) {
+      if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+        setError("Unable to load recent activity.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   }, [user?.id]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchActivities(controller.signal);
 
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
+    return () => controller.abort();
+  }, [fetchActivities]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-      <DashboardNavbar userName={displayName || "User"} />
+    <main className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* Light Hero Section */}
+      <section className="relative overflow-hidden rounded-3xl bg-white border border-slate-200/80 p-8 sm:p-10 shadow-sm">
+        {/* Soft background accents */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50/50 rounded-full blur-3xl -z-10 -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-50/40 rounded-full blur-3xl -z-10 pointer-events-none" />
 
-      {/* Logout is handled here so we can use useAuth() */}
-      {/* (DashboardNavbar remains reusable; button is in page layout) */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+              Dashboard
+            </span>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Welcome Banner Section */}
-        <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="space-y-4 z-10 max-w-xl">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Welcome back, {displayName}
             </h1>
-            <p className="text-blue-100 text-base sm:text-lg font-normal leading-relaxed">
-              Start meetings, invite students, and manage your online classroom
-              effortlessly.
+
+            <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-normal">
+              Start meetings, invite students, and manage your online classroom effortlessly.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2">
+            {/* Light Call to Actions */}
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <NavLink
                 to="/create-meeting"
-                className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold shadow-sm hover:bg-blue-50 transition duration-200 active:scale-95"
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold shadow-sm hover:shadow transition duration-200 active:scale-95"
               >
                 <PlusIcon className="w-5 h-5 stroke-[2.5]" />
                 Create Meeting
@@ -124,71 +143,117 @@ export const Dashboard: React.FC = () => {
 
               <NavLink
                 to="/join-meeting"
-                className="inline-flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition duration-200 active:scale-95"
+                className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-700 border border-slate-200/80 px-5 py-3 rounded-xl font-semibold transition duration-200 active:scale-95"
               >
-                <LinkIcon className="w-5 h-5 stroke-[2.5]" />
+                <LinkIcon className="w-5 h-5 stroke-[2]" />
                 Join Class
               </NavLink>
             </div>
           </div>
 
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="w-32 h-32 object-contain"
-          />
-        </section>
+          {/* Logo Container */}
+          <div className="hidden sm:flex shrink-0 items-center justify-center p-5">
+            <img
+              src="/logo.svg"
+              alt="Application Logo"
+              className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+            />
+          </div>
+        </div>
+      </section>
 
-        {/* Recent Activity Feed */}
-        {recentActivities.length > 0 && (
-          <section className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">
-              Recent Activity
-            </h2>
+      {/* Light Activity Feed Section */}
+      <section className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Summary of your latest classroom sessions</p>
+          </div>
 
-            <div className="mt-5 space-y-3 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-              {recentActivities.map((activity: ActivityItem) => {
-                const styles = getActivityStyles(activity.type);
-                const IconComponent = styles.icon;
+          {recentActivities.length > 0 && (
+            <span className="text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200/60 px-3 py-1 rounded-full">
+              {recentActivities.length} logs
+            </span>
+          )}
+        </div>
 
-                return (
-                  <div
-                    key={activity.id}
-                    className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200/80 transition-all duration-200 mr-1"
-                  >
-                    {/* Action Icon Wrapper */}
-                    <div
-                      className={`p-3 rounded-xl shrink-0 transition-transform duration-200 group-hover:scale-105 ${styles.bg}`}
-                    >
-                      <IconComponent className="w-5 h-5 sm:w-6 h-6" />
-                    </div>
-
-                    {/* Content Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                        <p className="font-semibold text-slate-800 text-sm sm:text-base truncate">
-                          {activity.title}
-                        </p>
-                        <span className="text-xs text-slate-400 font-medium shrink-0 sm:text-right">
-                          {activity.time}
-                        </span>
-                      </div>
-
-                      <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 truncate">
-                        Room:{" "}
-                        <span className="text-slate-600 font-semibold">
-                          {activity.roomName}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+        {/* Loading Skeleton */}
+        {isLoading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-20 bg-slate-100/80 rounded-2xl w-full animate-pulse border border-slate-100"
+              />
+            ))}
+          </div>
         )}
-      </main>
-    </div>
+
+        {/* Error State */}
+        {!isLoading && error && (
+          <div className="flex items-center gap-3 p-4 text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-2xl">
+            <ExclamationCircleIcon className="w-5 h-5 shrink-0 text-amber-600" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && recentActivities.length === 0 && (
+          <div className="text-center py-12 px-4 border-2 border-dashed border-slate-200/80 rounded-2xl bg-slate-50/40">
+            <div className="w-12 h-12 bg-white rounded-full border border-slate-200/80 flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <ClockIcon className="w-6 h-6 text-slate-400" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-800">No recent activity</h3>
+            <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">
+              Meetings and live classroom events will automatically appear here once you start.
+            </p>
+          </div>
+        )}
+
+        {/* Activity Feed */}
+        {!isLoading && !error && recentActivities.length > 0 && (
+          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+            {recentActivities.map((activity) => {
+              const config = getActivityConfig(activity.type);
+              const IconComponent = config.icon;
+
+              return (
+                <div
+                  key={activity.id}
+                  className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-50/60 hover:bg-white border border-slate-200/60 hover:border-slate-300 hover:shadow-md hover:shadow-slate-100 transition-all duration-200 cursor-pointer"
+                >
+                  {/* Action Icon */}
+                  <div className={`p-3 rounded-xl border shrink-0 ${config.bg}`}>
+                    <IconComponent className="w-5 h-5 stroke-[2]" />
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <p className="font-semibold text-slate-900 text-sm sm:text-base truncate group-hover:text-indigo-600 transition-colors">
+                        {activity.title}
+                      </p>
+                      <span className="text-xs text-slate-400 font-medium shrink-0">
+                        {activity.time}
+                      </span>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5 truncate">
+                      Room:{" "}
+                      <span className="text-slate-700 font-semibold">
+                        {activity.roomName}
+                      </span>
+                    </p>
+                  </div>
+
+                  <ChevronRightIcon className="w-4 h-4 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all shrink-0 hidden sm:block" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
   );
 };
 

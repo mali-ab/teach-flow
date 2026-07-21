@@ -48,9 +48,7 @@ export default function JoinMeeting() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
-      <DashboardNavbar />
-
+    <div className="min-h-lvh bg-[#F8FAFC] flex flex-col justify-between">
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 transition-all">
           {/* Header Icon & Title */}

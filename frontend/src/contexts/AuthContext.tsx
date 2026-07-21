@@ -6,10 +6,13 @@ import React, {
   useState,
 } from "react";
 
+export type SubscriptionTier = "free" | "pro";
+
 export type AuthUser = {
   id: number | string;
   name: string;
   email: string;
+  subscription: SubscriptionTier;
 };
 
 type AuthContextValue = {
@@ -18,6 +21,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login: (user: AuthUser, token: string) => void;
   logout: () => void;
+  updateSubscription: (tier: SubscriptionTier) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -60,6 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
+  const updateSubscription = (tier: SubscriptionTier) => {
+    if (user) {
+      const updatedUser: AuthUser = { ...user, subscription: tier };
+      setUser(updatedUser);
+      window.localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  };
+
   const value: AuthContextValue = useMemo(() => {
     return {
       user,
@@ -77,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.localStorage.removeItem(TOKEN_KEY);
         window.localStorage.removeItem("user");
       },
+      updateSubscription,
     };
   }, [user, token]);
 

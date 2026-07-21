@@ -1,3 +1,5 @@
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   BookOpen,
@@ -5,106 +7,240 @@ import {
   Video,
   FileText,
   Settings,
-  Users,
+  Sparkles,
+  LogOut,
+  GraduationCap,
+  X,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
-import { Link } from "react-router-dom";
-
-const studentLinks = [
+const mainNavItems = [
   {
     name: "Dashboard",
-    icon: <LayoutDashboard />,
-    path: "/student/dashboard",
+    icon: LayoutDashboard,
+    path: "/",
   },
-
   {
     name: "Courses",
-    icon: <BookOpen />,
-    path: "/student/courses",
+    icon: BookOpen,
+    path: "/courses",
   },
-
   {
     name: "Calendar",
-    icon: <Calendar />,
-    path: "#",
+    icon: Calendar,
+    path: "/calendar",
   },
-
   {
     name: "Live Classes",
-    icon: <Video />,
-    path: "#",
+    icon: Video,
+    path: "/live",
   },
-
   {
     name: "Assignments",
-    icon: <FileText />,
-    path: "#",
-  },
-
-  {
-    name: "Settings",
-    icon: <Settings />,
-    path: "#",
+    icon: FileText,
+    path: "/assignments",
   },
 ];
 
-export default function Sidebar() {
+const secondaryNavItems = [
+  {
+    name: "Subscription",
+    icon: Sparkles,
+    path: "/pricing",
+    badge: "Pro",
+  },
+  {
+    name: "Settings",
+    icon: Settings,
+    path: "/settings",
+  },
+];
+
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export default function Sidebar({
+  mobileOpen = false,
+  onCloseMobile,
+}: SidebarProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const isActive = (path: string) => location.pathname === path;
+  const isPro = user?.subscription === "pro";
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
-    <aside
-      className="
-  w-64
-  min-h-screen
-  bg-white
-  border-r
-  hidden
-  md:block
-  "
-    >
-      <div
-        className="
-  p-6
-  "
-      >
-        <h2
-          className="
-  text-2xl
-  font-bold
-  text-blue-600
-  "
-        >
-          TeachFlow
-        </h2>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs md:hidden"
+          onClick={onCloseMobile}
+        />
+      )}
 
-      <nav
-        className="
-  px-4
-  space-y-2
-  "
+      {/* Sidebar Container */}
+      <aside
+        className={`fixed md:sticky top-0 left-0 z-50 flex flex-col w-64 h-screen bg-white border-r border-slate-200 text-slate-600 transition-transform duration-300 ease-in-out select-none ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
-        {studentLinks.map((item) => (
-          <Link
-            key={item.name}
-            to={item.path}
-            className="
-  flex
-  items-center
-  gap-3
-  px-4
-  py-3
-  rounded-xl
-  text-gray-600
-  hover:bg-blue-50
-  hover:text-blue-600
-  transition
-  "
-          >
-            {item.icon}
-
-            <span>{item.name}</span>
+        {/* Brand Header */}
+        <div className="flex items-center justify-between px-6 h-16 border-b border-slate-100">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo.svg" alt="TeachFlow Logo" className="w-9 h-9" />
+            <span className="text-lg font-bold tracking-tight text-slate-900">
+              Teach<span className="text-blue-600">Flow</span>
+            </span>
           </Link>
-        ))}
-      </nav>
-    </aside>
+
+          {/* Close button for mobile menu */}
+          <button
+            onClick={onCloseMobile}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 md:hidden transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation Section */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-6">
+          {/* Main Items */}
+          <div>
+            <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Menu
+            </p>
+            <nav className="space-y-1">
+              {mainNavItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={onCloseMobile}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? "bg-blue-50 text-blue-600 font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`} />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Account Items */}
+          <div>
+            <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Account
+            </p>
+            <nav className="space-y-1">
+              {secondaryNavItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
+
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={onCloseMobile}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? "bg-blue-50 text-blue-600 font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon
+                        className={`w-4 h-4 flex-shrink-0 ${
+                          active
+                            ? "text-blue-600"
+                            : item.badge
+                            ? "text-amber-500"
+                            : "text-slate-400"
+                        }`}
+                      />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.badge && !isPro && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wide bg-amber-50 text-amber-600 border border-amber-200/60 rounded">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Upgrade Callout Card (Visible for non-Pro users) */}
+          {!isPro && (
+            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50/60 via-indigo-50/30 to-amber-50/40 border border-blue-100/80">
+              <div className="flex items-center gap-2 text-amber-600 font-semibold text-xs mb-1">
+                <Sparkles className="w-4 h-4" />
+                <span>Unlock Premium</span>
+              </div>
+              <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+                Get unlimited access to live classes, recorded lectures, and
+                tutor feedback.
+              </p>
+              <Link
+                to="/pricing"
+                onClick={onCloseMobile}
+                className="block text-center w-full py-1.5 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors shadow-xs"
+              >
+                Upgrade Plan
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Dynamic User Profile Footer */}
+        <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3 min-w-0">
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user?.name || "User Avatar"}
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-slate-200 flex-shrink-0"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white flex-shrink-0">
+                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-slate-800 truncate">
+                {user?.name || "Student"}
+              </span>
+              <span className="text-[11px] text-slate-400 truncate">
+                {user?.email || "student@teachflow.com"}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors flex-shrink-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

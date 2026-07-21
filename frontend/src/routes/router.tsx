@@ -1,13 +1,19 @@
-import { createBrowserRouter, useNavigate } from "react-router-dom";
-import CreateMeeting from "../pages/CreateMeeting";
-import Dashboard from "../pages/Dashboard";
+import { createBrowserRouter } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 
-import Home from "../pages/Home";
+import DashboardLayout from "../layouts/DashboardLayout";
+import Dashboard from "../pages/Dashboard";
+import Courses from "../pages/dashboard/Courses";
+import Calendar from "../pages/dashboard/Calendar";
+import LiveClasses from "../pages/dashboard/LiveClasses";
+import Assignments from "../pages/dashboard/Assignments";
+import Settings from "../pages/dashboard/Settings";
+
+import CreateMeeting from "../pages/CreateMeeting";
 import JoinMeeting from "../pages/JoinMeeting";
 import Login from "../pages/Login";
 import MeetingRoom from "../pages/MeetingRoom";
-
+import Pricing from "../pages/Pricing";
 import Register from "../pages/Register";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PublicRoute from "../components/PublicRoute";
@@ -17,7 +23,49 @@ import NotFound from "../pages/NotFound";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/dashboard" replace />,
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Dashboard />,
+      },
+      {
+        path: "courses",
+        element: <Courses />,
+      },
+      {
+        path: "calendar",
+        element: <Calendar />,
+      },
+      {
+        path: "live",
+        element: <LiveClasses />,
+      },
+      {
+        path: "assignments",
+        element: <Assignments />,
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+      {
+        path: "pricing",
+        element: <Pricing />,
+      },
+      {
+        path: "/create-meeting",
+        element: <CreateMeeting />,
+      },
+      {
+        path: "/join-meeting",
+        element: <JoinMeeting />,
+      },
+    ],
   },
   {
     path: "/login",
@@ -33,30 +81,6 @@ export const router = createBrowserRouter([
       <PublicRoute>
         <Register />
       </PublicRoute>
-    ),
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/create-meeting",
-    element: (
-      <ProtectedRoute>
-        <CreateMeeting />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/join-meeting",
-    element: (
-      <ProtectedRoute>
-        <JoinMeeting />
-      </ProtectedRoute>
     ),
   },
   {

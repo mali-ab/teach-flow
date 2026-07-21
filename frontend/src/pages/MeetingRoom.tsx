@@ -118,10 +118,9 @@ export default function MeetingRoom() {
     joinConference({ roomName, displayName, url: joinUrl });
   }, [joinUrl, jitsiJoined, roomName, displayName, joinConference]);
 
-  // Redirect to dashboard if kicked out of the meeting
   useEffect(() => {
     if (kickedOut) {
-      navigate("/dashboard", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [kickedOut, navigate]);
 
@@ -162,7 +161,7 @@ export default function MeetingRoom() {
 
         <div className="absolute top-4 left-6 z-10 pointer-events-none flex items-center gap-2">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="TeachFlow Logo"
             className="h-20 w-auto object-contain drop-shadow-md"
           />
@@ -219,7 +218,7 @@ export default function MeetingRoom() {
         }
         onLeave={() => {
           leaveConference();
-          navigate("/dashboard");
+          navigate("/");
         }}
       />
     </div>
