@@ -12,16 +12,15 @@ export default function MeetingHeader({
   roomName,
   duration,
   participantCount,
-  role = "Host",
+  role = "Организатор",
   isSpeaking = false,
 }: MeetingHeaderProps) {
   return (
     <header className="h-16 w-full px-4 sm:px-6 border-b border-slate-800/60 bg-[#020617]/90 backdrop-blur-lg flex items-center justify-between z-10 select-none">
-      {/* Left Section: Status indicator & Room Metadata */}
       <div className="flex min-w-0 items-center gap-3">
         <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-400 shrink-0">
           <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-          <span>Live</span>
+          <span>В эфире</span>
         </div>
 
         <div className="flex min-w-0 flex-col">
@@ -29,12 +28,11 @@ export default function MeetingHeader({
             {roomName}
           </h1>
           <p className="text-[11px] text-slate-500 truncate">
-            {participantCount} participant{participantCount === 1 ? "" : "s"} joined
+            {participantCount} участник{participantCount === 1 ? "" : participantCount < 5 ? "а" : "ов"}
           </p>
         </div>
       </div>
 
-      {/* Center Section: Speaking Status & Role Badges */}
       <div className="flex items-center gap-2 sm:gap-3">
         <div
           className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors duration-200 ${
@@ -43,7 +41,7 @@ export default function MeetingHeader({
               : "border-slate-700 bg-slate-900/70 text-slate-400"
           }`}
         >
-          {isSpeaking ? "Speaking" : "Listening"}
+          {isSpeaking ? "Говорит" : "Слушает"}
         </div>
 
         <div className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-400">
@@ -51,7 +49,6 @@ export default function MeetingHeader({
         </div>
       </div>
 
-      {/* Right Section: Stream details, Timer clock, and Security info */}
       <div className="flex items-center gap-2 sm:gap-4 text-[11px] text-slate-400">
         <div className="hidden items-center gap-2 sm:flex">
           <SignalIcon className="h-4 w-4 text-emerald-400" />
@@ -64,7 +61,7 @@ export default function MeetingHeader({
 
         <div className="hidden items-center gap-1.5 md:flex">
           <ShieldCheckIcon className="h-4 w-4 text-blue-400" />
-          <span>Secure</span>
+          <span>Защищено</span>
         </div>
       </div>
     </header>

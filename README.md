@@ -1,6 +1,6 @@
-# TeachFlow
+# Relay
 
-> **TeachFlow** is a sleek, lightweight, and minimalistic online video conferencing platform. This application integrates a high-performance **Go (Golang)** backend with a modern **React & TypeScript** frontend, embedding **Jitsi Meet** for seamless, low-latency video and audio communication.
+> **Relay** is a sleek, lightweight, and minimalistic online video conferencing platform. This application integrates a high-performance **Go (Golang)** backend with a modern **React & TypeScript** frontend, embedding **Jitsi Meet** for seamless, low-latency video and audio communication.
 
 ---
 
@@ -26,7 +26,7 @@
 ## 📂 Project Structure
 
 ```text
-teachflow/
+relay/
 ├── backend/                  # Go (Golang) API server & REST controllers
 │   ├── main.go               # Application entrypoint & HTTP routes
 │   └── ...
@@ -54,8 +54,7 @@ Ensure you have the following installed on your machine:
 
 * [Node.js](https://nodejs.org/) (v18+) & `npm` / `yarn`
 * [Go](https://golang.org/) (v1.20+)
-* 
-[Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) 
+* [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) 
 
 ---
 

@@ -1,32 +1,259 @@
-# React + TypeScript + Vite
+# Relay Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> **Relay** — это современный, минималистичный веб-клиент для видеоконференций и онлайн-обучения. Фронтенд построен на **React 19**, **TypeScript** и **Tailwind CSS v4** с интеграцией **Jitsi Meet** для высококачественной видео- и аудиосвязи.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Ключевые возможности
 
-## React Compiler
+- **🔐 Аутентификация и авторизация**: Регистрация и вход с JWT-токенами, защищённые маршруты для авторизованных пользователей.
+- **📊 Панель управления (Dashboard)**: Персонализированная главная страница с приветствием, быстрым доступом к созданию/подключению встреч и лентой недавней активности.
+- **🎥 Видеоконференции на базе Jitsi Meet**: Полноценная интеграция с Jitsi External API — управление аудио/видео, демонстрация экрана, чат, список участников.
+- **📅 Боковая панель навигации**: Меню с разделами «Главная», «Курсы», «Календарь», «Живые классы», «Задания», «Настройки» и «Подписка».
+- **💰 Система подписок (Free / Pro)**: Страница с тарифами, переключение между бесплатным и Pro-планом, отображение текущего плана в UI.
+- **🌐 Российская локализация**: Интерфейс полностью на русском языке.
+- **📱 Адаптивный дизайн**: Полностью отзывчивый интерфейс с мобильной боковой панелью и современным стеклянным (glassmorphic) стилем.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🏗️ Технологический стек
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+| Технология | Назначение |
+|---|---|
+| **React 19** | Библиотека для построения пользовательских интерфейсов |
+| **TypeScript** | Статическая типизация |
+| **Vite 8** | Сборщик и dev-сервер |
+| **Tailwind CSS v4** | Утилитарный CSS-фреймворк |
+| **React Router v7** | Клиентская маршрутизация |
+| **Axios** | HTTP-клиент для API-запросов |
+| **Zustand** | Управление состоянием (store) |
+| **TanStack React Query** | Управление серверным состоянием и кэширование |
+| **React Hook Form + Zod** | Управление формами и валидация |
+| **Framer Motion** | Анимации и переходы |
+| **Lucide React / Heroicons** | Библиотеки иконок |
+| **Oxlint** | Линтер для TypeScript/React кода |
+| **Jitsi Meet External API** | Интеграция видеоконференций |
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
+---
+
+## 📂 Структура проекта
+
+```
+frontend/
+├── public/                          # Статические ресурсы
+│   ├── favicon.svg
+│   └── logo.svg
+├── src/
+│   ├── assets/                      # Изображения и медиа
+│   ├── components/                  # Переиспользуемые компоненты
+│   │   ├── dashboard/
+│   │   │   ├── DashboardNavbar.tsx  # Верхняя панель навигации
+│   │   │   └── Sidebar.tsx          # Боковая панель (десктоп + мобильная)
+│   │   ├── meetings/
+│   │   │   ├── ChatSidebar.tsx      # Боковая панель чата
+│   │   │   ├── MeetingControls.tsx  # Кнопки управления встречей
+│   │   │   ├── MeetingForm.tsx      # Форма создания встречи
+│   │   │   ├── MeetingHeader.tsx    # Заголовок встречи с таймером
+│   │   │   └── ParticipantsSidebar.tsx # Боковая панель участников
+│   │   ├── settings/                # Компоненты страницы настроек
+│   │   │   ├── InputField.tsx
+│   │   │   ├── NotificationsSection.tsx
+│   │   │   ├── ProfileSection.tsx
+│   │   │   ├── SectionHeader.tsx
+│   │   │   ├── SecuritySection.tsx
+│   │   │   └── ToggleSwitch.tsx
+│   │   ├── ProtectedRoute.tsx       # Защищённый маршрут
+│   │   └── PublicRoute.tsx          # Публичный маршрут
+│   ├── contexts/
+│   │   ├── AuthContext.tsx           # Контекст аутентификации
+│   │   └── JitsiRoomContext.tsx      # Контекст комнаты Jitsi
+│   ├── layouts/
+│   │   ├── AuthLayout.tsx           # Лэйаут для страниц входа/регистрации
+│   │   └── DashboardLayout.tsx      # Лэйаут для дашборда с Sidebar + Navbar
+│   ├── lib/
+│   │   └── axios.ts                 # Настроенный экземпляр Axios
+│   ├── pages/
+│   │   ├── CreateMeeting.tsx        # Создание новой встречи
+│   │   ├── Dashboard.tsx            # Панель управления (главная)
+│   │   ├── JoinMeeting.tsx          # Подключение к встрече
+│   │   ├── Login.tsx                # Вход в систему
+│   │   ├── MeetingRoom.tsx          # Комната видеоконференции
+│   │   ├── NotFound.tsx             # Страница 404
+│   │   ├── Pricing.tsx              # Тарифы и подписки
+│   │   ├── Register.tsx             # Регистрация
+│   │   └── dashboard/               # Страницы дашборда
+│   │       ├── Assignments.tsx      # Задания
+│   │       ├── Calendar.tsx         # Календарь
+│   │       ├── Courses.tsx          # Курсы
+│   │       ├── LiveClasses.tsx      # Живые классы
+│   │       └── Settings.tsx         # Настройки профиля
+│   ├── routes/
+│   │   └── router.tsx               # Конфигурация маршрутов
+│   ├── store/                       # Zustand store
+│   ├── types/
+│   │   └── meeting.ts               # TypeScript интерфейсы
+│   ├── index.css                    # Глобальные стили (Tailwind)
+│   └── main.tsx                     # Точка входа
+├── index.html                       # HTML-шаблон
+├── package.json                     # Зависимости и скрипты
+├── vite.config.ts                   # Конфигурация Vite
+├── tsconfig.json                    # Конфигурация TypeScript
+├── tsconfig.app.json                # Конфигурация для приложения
+├── tsconfig.node.json               # Конфигурация для Node
+├── .oxlintrc.json                   # Конфигурация Oxlint
+└── .gitignore
+```
+
+---
+
+## 🚀 Быстрый старт
+
+### Предварительные требования
+
+Убедитесь, что на вашем компьютере установлены:
+
+- **[Node.js](https://nodejs.org/)** (v18 или выше)
+- **npm** (входит в состав Node.js) или **yarn**
+
+### Установка и запуск
+
+```bash
+# 1. Перейдите в директорию фронтенда
+cd frontend
+
+# 2. Установите зависимости
+npm install
+
+# 3. Запустите dev-сервер
+npm run dev
+```
+
+После запуска dev-сервер будет доступен по адресу: **http://localhost:3001**
+
+### Сборка для production
+
+```bash
+npm run build
+```
+
+Собранные файлы будут сохранены в директории `dist/`.
+
+---
+
+## 🔧 Конфигурация
+
+### Переменные окружения
+
+Создайте файл `.env` в корне `frontend/`:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080
+VITE_JITSI_DOMAIN=meet.jit.si
+```
+
+| Переменная | Описание | Значение по умолчанию |
+|---|---|---|
+| `VITE_API_BASE_URL` | Базовый URL Go API-сервера | `/api` |
+| `VITE_JITSI_DOMAIN` | Домен Jitsi Meet сервера | `meet.jit.si` |
+
+### Прокси для API
+
+В режиме разработки Vite автоматически проксирует запросы к `/api` на Go-бэкенд (по умолчанию `http://192.168.55.43:8080`). Настройка выполняется в `vite.config.ts`:
+
+```ts
+proxy: {
+  "/api": {
+    target: "http://192.168.55.43:8080",
+    changeOrigin: true,
   },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
 }
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+---
+
+## 📜 Доступные скрипты
+
+| Команда | Описание |
+|---|---|
+| `npm run dev` | Запуск dev-сервера Vite на порту 3001 |
+| `npm run build` | TypeScript-компиляция + сборка Vite |
+| `npm run preview` | Локальный предпросмотр production-сборки |
+| `npm run lint` | Проверка кода с помощью Oxlint |
+
+---
+
+## 🧭 Маршрутизация
+
+Приложение использует React Router v7 с `createBrowserRouter`:
+
+| Маршрут | Страница | Доступ |
+|---|---|---|
+| `/` | Dashboard (главная) | 🔒 Авторизованные |
+| `/courses` | Курсы | 🔒 |
+| `/calendar` | Календарь | 🔒 |
+| `/live` | Живые классы | 🔒 |
+| `/assignments` | Задания | 🔒 |
+| `/settings` | Настройки | 🔒 |
+| `/pricing` | Тарифы | 🔒 |
+| `/create-meeting` | Создание встречи | 🔒 |
+| `/join-meeting` | Присоединение к встрече | 🔒 |
+| `/meeting/:id` | Комната видеоконференции | 🔒 |
+| `/login` | Вход | ✅ Публично |
+| `/register` | Регистрация | ✅ Публично |
+| `*` | 404 — Страница не найдена | ✅ Публично |
+
+> 🔒 — требуется аутентификация (перенаправление на `/login`)
+
+---
+
+## 🧠 Архитектура приложения
+
+### Контексты
+
+- **`AuthContext`** — управление состоянием аутентификации (user, token, login, logout, subscription). Данные сохраняются в `localStorage`.
+- **`JitsiRoomContext`** — управление комнатой Jitsi Meet: подключение, отключение, состояние участников, аудио/видео, чат, демонстрация экрана.
+
+### HTTP-клиент
+
+Настроенный экземпляр **Axios** (`lib/axios.ts`):
+- Автоматически добавляет JWT-токен в заголовок `Authorization`.
+- При ошибке 401 очищает локальное хранилище и перенаправляет на `/login`.
+
+### Интеграция Jitsi Meet
+
+Компонент `MeetingRoom.tsx` в паре с `JitsiRoomContext`:
+- Загружает скрипт `external_api.js` с Jitsi-сервера.
+- Создаёт экземпляр `JitsiMeetExternalAPI` с кастомными настройками (отключение водяных знаков, превью-страницы, тулбара).
+- Управляет событиями: подключение, отключение, мутирование, чат, кик.
+- Предоставляет кастомные панели: **MeetingControls** (управление), **ChatSidebar** (чат), **ParticipantsSidebar** (участники).
+
+---
+
+## 🤝 Взаимодействие с бэкендом
+
+Фронтенд взаимодействует с **Go API-сервером** через REST API:
+
+| Endpoint | Метод | Описание |
+|---|---|---|
+| `/api/auth/login` | POST | Вход в систему |
+| `/api/auth/register` | POST | Регистрация |
+| `/api/meetings` | POST | Создание встречи |
+| `/api/meetings/join/:roomId` | GET | Получение информации о комнате |
+| `/api/meetings/:userId` | GET | Список встреч пользователя |
+
+---
+
+## 🎨 Дизайн и стилизация
+
+- **Tailwind CSS v4** — все стили написаны с помощью утилитарных классов.
+- **Тёмная тема** — комната встречи использует тёмную тему (`#020617`).
+- **Glassmorphism** — элементы с эффектом стекла (`backdrop-blur`, полупрозрачные фоны).
+- **Анимации** — плавные переходы, пульсации загрузки, анимация вращения спиннеров.
+- **Адаптивность** — мобильная боковая панель, адаптивные сетки.
+
+---
+
+## 📄 Лицензия
+
+Проект распространяется под лицензией MIT.
+

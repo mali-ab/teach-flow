@@ -48,7 +48,7 @@ export default function MeetingRoom() {
     "chat" | "participants" | null
   >(null);
   const [roomName, setRoomName] = useState<string>(
-    id ? decodeURIComponent(id) : "TeachFlow Room",
+    id ? decodeURIComponent(id) : "Комната Relay",
   );
   const [joinUrl, setJoinUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +56,7 @@ export default function MeetingRoom() {
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [jitsiJoined, setJitsiJoined] = useState(false);
 
-  const displayName = useMemo(() => user?.name || "You", [user]);
+  const displayName = useMemo(() => user?.name || "Вы", [user]);
 
   useEffect(() => {
     const timer = window.setInterval(
@@ -69,7 +69,7 @@ export default function MeetingRoom() {
   useEffect(() => {
     const roomId = id ? decodeURIComponent(id) : "";
     if (!roomId) {
-      setError("No meeting room was provided.");
+      setError("Не указан идентификатор комнаты.");
       return;
     }
     let isActive = true;
@@ -87,18 +87,14 @@ export default function MeetingRoom() {
       } catch (err: unknown) {
         if (!isActive) return;
 
-        // Check if the error returned from the API is a 404 Not Found
         if (axios.isAxiosError(err)) {
           if (err.response?.status === 404) {
-            // Redirect immediately to the 404 route
-            // Setting { replace: true } prevents the broken link from cluttering browser history
             navigate("/404", { replace: true });
             return;
           }
         }
 
-        // Fallback error behavior for non-404 errors (network issues, 500 server errors, etc.)
-        setError("Unable to reach the meeting service.");
+        setError("Не удалось подключиться к серверу видеоконференций.");
         setJoinUrl("https://meet.jit.si");
       } finally {
         if (isActive) setLoading(false);
@@ -129,7 +125,7 @@ export default function MeetingRoom() {
       id: jp.id,
       name:
         jp.displayName ||
-        (jp.id === localParticipantId ? displayName : "Guest"),
+        (jp.id === localParticipantId ? displayName : "Гость"),
       isSelf: jp.id === localParticipantId,
       isSpeaking: false,
       isVideoOff: jp.isVideoOff,
@@ -148,7 +144,7 @@ export default function MeetingRoom() {
           return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
         })()}
         participantCount={currentParticipants.length}
-        role="Participant"
+        role="Участник"
         isSpeaking={!jitsiAudioMuted}
       />
 
@@ -162,7 +158,7 @@ export default function MeetingRoom() {
         <div className="absolute top-4 left-6 z-10 pointer-events-none flex items-center gap-2">
           <img
             src="/logo.svg"
-            alt="TeachFlow Logo"
+            alt="Relay Logo"
             className="h-20 w-auto object-contain drop-shadow-md"
           />
         </div>
@@ -182,7 +178,7 @@ export default function MeetingRoom() {
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#020617]/80 backdrop-blur-sm">
             <div className="text-sm text-slate-400 flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span>Connecting to meeting room...</span>
+              <span>Подключение к комнате...</span>
             </div>
           </div>
         )}

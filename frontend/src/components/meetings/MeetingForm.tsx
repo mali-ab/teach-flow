@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   VideoCameraIcon,
   ArrowPathIcon,
@@ -20,8 +20,8 @@ interface MeetingFormProps {
 }
 
 const DURATION_OPTIONS = [
-  { value: 15, label: "15 min" },
-  { value: 30, label: "30 min" },
+  { value: 15, label: "15 мин" },
+  { value: 30, label: "30 мин" },
 ];
 
 export default function MeetingForm({
@@ -63,18 +63,14 @@ export default function MeetingForm({
   return (
     <div className="flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
-        {/* Header */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-3.5 rounded-2xl mb-4 shadow-lg shadow-blue-200/50">
-            <VideoCameraIcon className="w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Meeting</h1>
+          <img className="h-18" src="/logo.svg" />
+          <h1 className="text-3xl font-bold text-gray-900">Создать встречу</h1>
           <p className="text-gray-500 mt-2 text-sm">
-            Set up a new online meeting in seconds
+            Создайте новую онлайн-встречу за несколько секунд
           </p>
         </div>
 
-        {/* Subscription Plan Banner - Redesigned */}
         <div
           className={`mb-6 rounded-2xl border overflow-hidden ${
             isPro
@@ -82,7 +78,6 @@ export default function MeetingForm({
               : "border-slate-200 bg-gradient-to-br from-slate-50 to-gray-50"
           }`}
         >
-          {/* Top accent bar */}
           <div
             className={`h-1.5 w-full ${
               isPro
@@ -92,7 +87,6 @@ export default function MeetingForm({
           />
 
           <div className="p-4">
-            {/* Plan header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 {isPro ? (
@@ -109,7 +103,7 @@ export default function MeetingForm({
                     isPro ? "text-blue-700" : "text-slate-700"
                   }`}
                 >
-                  {isPro ? "Pro Plan" : "Free Plan"}
+                  {isPro ? "Pro-тариф" : "Бесплатный тариф"}
                 </span>
               </div>
 
@@ -118,61 +112,57 @@ export default function MeetingForm({
                   to="/pricing"
                   className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                 >
-                  Upgrade
+                  Улучшить
                 </Link>
               )}
               {isPro && (
                 <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2.5 py-0.5 rounded-full">
-                  Active
+                  Активен
                 </span>
               )}
             </div>
 
-            {/* Limits display */}
             <div className="space-y-2.5">
-              {/* Duration row */}
               <div className="flex items-center gap-2.5 text-xs">
                 <ClockIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-slate-500">Duration</span>
+                <span className="text-slate-500">Длительность</span>
                 <div className="flex-1" />
                 <div className="flex items-center gap-1.5">
                   {isPro ? (
                     <>
-                      <span className="text-slate-400 line-through text-[11px]">30 min</span>
+                      <span className="text-slate-400 line-through text-[11px]">30 мин</span>
                       <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md text-[11px]">
-                        Unlimited
+                        Безлимитно
                       </span>
                     </>
                   ) : (
-                    <span className="font-medium text-slate-700">30 min max</span>
+                    <span className="font-medium text-slate-700">Макс. 30 мин</span>
                   )}
                 </div>
               </div>
 
-              {/* Participants row */}
               <div className="flex items-center gap-2.5 text-xs">
                 <UserGroupIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                <span className="text-slate-500">Participants</span>
+                <span className="text-slate-500">Участники</span>
                 <div className="flex-1" />
                 <div className="flex items-center gap-1.5">
                   {isPro ? (
                     <>
                       <span className="text-slate-400 line-through text-[11px]">5</span>
                       <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md text-[11px]">
-                        Up to 30
+                        До 30
                       </span>
                     </>
                   ) : (
-                    <span className="font-medium text-slate-700">Up to 5</span>
+                    <span className="font-medium text-slate-700">До 5</span>
                   )}
                 </div>
               </div>
 
-              {/* Visual progress bar for max participants */}
               <div className="pt-1">
                 <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                  <span>Participants</span>
-                  <span>{isPro ? "30 max" : "5 max"}</span>
+                  <span>Участники</span>
+                  <span>{isPro ? "Макс. 30" : "Макс. 5"}</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                   <div
@@ -189,13 +179,12 @@ export default function MeetingForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Meeting Name */}
           <div>
             <label
               htmlFor="title"
               className="block text-sm font-semibold text-gray-700 mb-1.5"
             >
-              Meeting Name
+              Название встречи
             </label>
             <input
               id="title"
@@ -204,18 +193,17 @@ export default function MeetingForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={isLoading}
-              placeholder="Example: Mathematics Class"
+              placeholder="Например: Урок математики"
               className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-gray-900 placeholder-gray-400 outline-none transition focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:opacity-60"
             />
           </div>
 
-          {/* Duration Selector - only shown for free users */}
           {!isPro && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <ClockIcon className="w-4 h-4 text-gray-400" />
-                  <span>Meeting Duration</span>
+                  <span>Длительность встречи</span>
                 </div>
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -240,18 +228,17 @@ export default function MeetingForm({
               </div>
               <p className="mt-1.5 text-[11px] text-amber-600 flex items-center gap-1">
                 <BoltIcon className="w-3.5 h-3.5" />
-                Free plan: max 30 minutes per meeting
+                Бесплатный тариф: макс. 30 минут на встречу
               </p>
             </div>
           )}
 
-          {/* Pro users: show duration info */}
           {isPro && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <ClockIcon className="w-4 h-4 text-gray-400" />
-                  <span>Meeting Duration</span>
+                  <span>Длительность встречи</span>
                 </div>
               </label>
               <div className="rounded-2xl border-2 border-blue-200 bg-blue-50/50 px-4 py-3 flex items-center gap-2.5">
@@ -260,23 +247,22 @@ export default function MeetingForm({
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-blue-700">
-                    Unlimited Duration
+                    Безлимитная длительность
                   </span>
                   <p className="text-[11px] text-blue-500/70">
-                    No time limits on Pro plan
+                    Без ограничений по времени на Pro-тарифе
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Scheduling Toggle */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-sm font-semibold text-gray-700">
                 <div className="flex items-center gap-1.5">
                   <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
-                  <span>Schedule</span>
+                  <span>Запланировать</span>
                 </div>
               </label>
               <button
@@ -301,7 +287,7 @@ export default function MeetingForm({
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Date
+                    Дата
                   </label>
                   <input
                     type="date"
@@ -314,7 +300,7 @@ export default function MeetingForm({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Time
+                    Время
                   </label>
                   <input
                     type="time"
@@ -329,13 +315,12 @@ export default function MeetingForm({
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-2.5 mt-2">
                 <p className="text-xs text-gray-400 flex items-center gap-1.5">
                   <BoltIcon className="w-3.5 h-3.5" />
-                  Meeting will start immediately
+                  Встреча начнётся сразу
                 </p>
               </div>
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={isLoading || !title.trim()}
@@ -344,10 +329,10 @@ export default function MeetingForm({
             {isLoading ? (
               <>
                 <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                <span>Creating...</span>
+                <span>Создание...</span>
               </>
             ) : (
-              <span>{isScheduled ? "Schedule Meeting" : "Create Meeting"}</span>
+              <span>{isScheduled ? "Запланировать встречу" : "Создать встречу"}</span>
             )}
           </button>
         </form>

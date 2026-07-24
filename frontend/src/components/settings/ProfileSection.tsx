@@ -36,9 +36,9 @@ export default function ProfileSection() {
 
   const handleSave = async () => {
     const newErrors: FormErrors = {};
-    if (!name.trim()) newErrors.name = "Name is required";
-    if (!email.trim()) newErrors.email = "Email is required";
-    else if (!isValidEmail(email)) newErrors.email = "Invalid email address";
+    if (!name.trim()) newErrors.name = "Имя обязательно";
+    if (!email.trim()) newErrors.email = "Email обязателен";
+    else if (!isValidEmail(email)) newErrors.email = "Неверный формат email";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
@@ -67,7 +67,6 @@ export default function ProfileSection() {
       className="bg-white border border-t-0 border-slate-100 rounded-b-2xl overflow-hidden"
     >
       <div className="p-5 sm:p-6 space-y-6">
-        {/* Avatar */}
         <div className="flex items-center gap-5">
           <div className="relative group">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-blue-200">
@@ -82,41 +81,39 @@ export default function ProfileSection() {
           </div>
           <div>
             <p className="font-semibold text-slate-900 text-base">
-              {user?.name || "User"}
+              {user?.name || "Пользователь"}
             </p>
             <p className="text-sm text-slate-400">{user?.email}</p>
             <span className="inline-block mt-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-              {user?.subscription === "pro" ? "Pro Plan" : "Free Plan"}
+              {user?.subscription === "pro" ? "Pro-тариф" : "Бесплатный тариф"}
             </span>
           </div>
         </div>
 
         <hr className="border-slate-100" />
 
-        {/* Name & Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField
-            label="Full Name"
+            label="Полное имя"
             value={name}
             onChange={setName}
-            placeholder="John Doe"
+            placeholder="Иван Петров"
             icon={User}
             error={errors.name}
           />
           <InputField
-            label="Email Address"
+            label="Email"
             value={email}
             onChange={setEmail}
-            placeholder="john@example.com"
+            placeholder="ivan@example.com"
             icon={Mail}
             error={errors.email}
           />
         </div>
 
-        {/* Save */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
           <p className="text-xs text-slate-400">
-            Changes are saved locally and will sync when connected.
+            Изменения сохраняются локально. Данные будут синхронизированы при подключении к серверу.
           </p>
           <button
             type="button"
@@ -127,17 +124,17 @@ export default function ProfileSection() {
             {saving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
+                Сохранение...
               </>
             ) : saved ? (
               <>
                 <CheckCircle className="w-4 h-4 text-green-300" />
-                Saved
+                Сохранено
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                Сохранить
               </>
             )}
           </button>

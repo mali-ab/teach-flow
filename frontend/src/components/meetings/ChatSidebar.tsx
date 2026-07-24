@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { XMarkIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
 
 interface ChatSidebarProps {
@@ -37,9 +37,8 @@ export default function ChatSidebar({ messages, onSendMessage, onClose }: ChatSi
 
   return (
     <aside className="w-80 h-full bg-slate-900/90 border border-slate-800 rounded-2xl flex flex-col backdrop-blur-md overflow-hidden transition-all duration-200">
-      {/* Header */}
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 className="font-semibold text-slate-200 text-sm">In-Meeting Chat</h3>
+        <h3 className="font-semibold text-slate-200 text-sm">Чат встречи</h3>
         <button
           onClick={onClose}
           className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
@@ -48,11 +47,10 @@ export default function ChatSidebar({ messages, onSendMessage, onClose }: ChatSi
         </button>
       </div>
 
-      {/* Messages List */}
       <div className="flex-1 p-4 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-slate-800">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-950/50 text-center text-xs text-slate-500">
-            No messages yet. Start the conversation.
+            Пока нет сообщений. Начните разговор.
           </div>
         ) : (
           messages.map((msg) => (
@@ -79,11 +77,10 @@ export default function ChatSidebar({ messages, onSendMessage, onClose }: ChatSi
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Box */}
       <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 flex items-center gap-2">
         <input
           type="text"
-          placeholder="Send a message..."
+          placeholder="Напишите сообщение..."
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           className="flex-1 bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 transition"

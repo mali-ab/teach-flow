@@ -17,22 +17,22 @@ export default function Settings() {
     {
       id: "profile",
       icon: User,
-      title: "Profile",
-      description: "Update your personal information",
+      title: "Профиль",
+      description: "Обновите личную информацию",
       component: <ProfileSection />,
     },
     {
       id: "notifications",
       icon: Bell,
-      title: "Notifications",
-      description: "Manage your notification preferences",
+      title: "Уведомления",
+      description: "Настройте предпочтения уведомлений",
       component: <NotificationsSection />,
     },
     {
       id: "security",
       icon: Shield,
-      title: "Security",
-      description: "Password and account security",
+      title: "Безопасность",
+      description: "Пароль и безопасность аккаунта",
       component: <SecuritySection />,
     },
   ];
@@ -41,9 +41,9 @@ export default function Settings() {
     <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Настройки</h1>
         <p className="text-slate-500 mt-1.5">
-          Manage your account settings and preferences.
+          Управляйте настройками и предпочтениями аккаунта.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function Settings() {
 
       {/* Footer */}
       <p className="mt-6 text-center text-xs text-slate-400">
-        Your data is stored locally and will sync when connected to the server.
+        Ваши данные хранятся локально и будут синхронизированы при подключении к серверу.
       </p>
     </div>
   );

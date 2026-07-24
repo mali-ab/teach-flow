@@ -11,6 +11,7 @@ import Settings from "../pages/dashboard/Settings";
 
 import CreateMeeting from "../pages/CreateMeeting";
 import JoinMeeting from "../pages/JoinMeeting";
+import ForgotPassword from "../pages/ForgotPassword";
 import Login from "../pages/Login";
 import MeetingRoom from "../pages/MeetingRoom";
 import Pricing from "../pages/Pricing";
@@ -80,6 +81,14 @@ export const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <Register />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPassword />
       </PublicRoute>
     ),
   },

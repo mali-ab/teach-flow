@@ -13,19 +13,26 @@ const api: AxiosInstance = axios.create({
   },
 });
 
-// Request Interceptor: Inject Auth Token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+
+      const bodyMethods = new Set(["post", "put", "patch", "delete"]);
+      if (config.method && bodyMethods.has(config.method.toLowerCase())) {
+        if (config.data) {
+          config.data.token = token;
+        } else {
+          config.data = { token };
+        }
+      }
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Catch Global Errors (401, 404, etc.)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -33,7 +40,6 @@ api.interceptors.response.use(
       const { status } = error.response;
       
       if (status === 401) {
-        // Token expired or invalid -> Clear local auth cache
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login"; 

@@ -1,10 +1,12 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
+import api from "../lib/axios";
 
 export type SubscriptionTier = "free" | "pro";
 
@@ -19,6 +21,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (user: AuthUser, token: string) => void;
   logout: () => void;
   updateSubscription: (tier: SubscriptionTier) => void;
@@ -28,7 +31,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const TOKEN_KEY = "token";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const raw = window.localStorage.getItem("user");
@@ -44,25 +47,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = window.localStorage.getItem(TOKEN_KEY);
-    if (storedToken) {
-      setToken(storedToken);
 
-      const storedUserRaw = window.localStorage.getItem("user");
-      if (storedUserRaw) {
-        try {
-          const parsed = JSON.parse(storedUserRaw) as AuthUser;
-          setUser(parsed);
-        } catch {
-          // ignore
-        }
-      }
+    if (!storedToken) {
+      setIsLoading(false);
+      return;
     }
+
+    setToken(storedToken);
+
+    api
+      .get("/me")
+      .then((response) => {
+        const data = response.data;
+        const raw = data.user || data;
+        const freshUser: AuthUser = {
+          id: String(raw.id ?? raw.ID ?? ""),
+          name: raw.name ?? raw.Name ?? "",
+          email: raw.email ?? raw.Email ?? "",
+          subscription: (raw.subscription ?? raw.Subscription ?? "free") as SubscriptionTier,
+        };
+        setUser(freshUser);
+        window.localStorage.setItem("user", JSON.stringify(freshUser));
+      })
+      .catch((error) => {
+        if (error?.response?.status === 401) {
+          setUser(null);
+          setToken(null);
+          window.localStorage.removeItem(TOKEN_KEY);
+          window.localStorage.removeItem("user");
+        }
+        
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
-
-
 
   const updateSubscription = (tier: SubscriptionTier) => {
     if (user) {
@@ -76,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {
       user,
       token,
-      isAuthenticated: !!token,
+      isAuthenticated: !!token && !isLoading,
+      isLoading,
       login: (u, t) => {
         setUser(u);
         setToken(t);
@@ -91,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       updateSubscription,
     };
-  }, [user, token]);
+  }, [user, token, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -99,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuth должен использоваться внутри AuthProvider");
   }
   return ctx;
 }

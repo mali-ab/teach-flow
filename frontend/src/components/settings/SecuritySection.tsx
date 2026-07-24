@@ -30,19 +30,19 @@ export default function SecuritySection() {
     setSuccess(false);
 
     if (!currentPassword) {
-      setError("Current password is required");
+      setError("Текущий пароль обязателен");
       return;
     }
     if (!newPassword) {
-      setError("New password is required");
+      setError("Новый пароль обязателен");
       return;
     }
     if (newPassword.length < 6) {
-      setError("New password must be at least 6 characters");
+      setError("Новый пароль должен содержать не менее 6 символов");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Пароли не совпадают");
       return;
     }
 
@@ -57,10 +57,7 @@ export default function SecuritySection() {
     setTimeout(() => setSuccess(false), 4000);
   };
 
-  const renderPasswordToggle = (
-    show: boolean,
-    toggle: () => void
-  ) => (
+  const renderPasswordToggle = (show: boolean, toggle: () => void) => (
     <button
       type="button"
       onClick={toggle}
@@ -79,17 +76,16 @@ export default function SecuritySection() {
       className="bg-white border border-t-0 border-slate-100 rounded-b-2xl overflow-hidden"
     >
       <div className="p-5 sm:p-6 space-y-6">
-        {/* Change Password */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <KeyRound className="w-5 h-5 text-slate-600" />
-            <h4 className="font-semibold text-slate-900">Change Password</h4>
+            <h4 className="font-semibold text-slate-900">Сменить пароль</h4>
           </div>
 
           {success && (
             <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-sm font-medium">
               <CheckCircle className="w-4 h-4 shrink-0" />
-              Password changed successfully
+              Пароль успешно изменён
             </div>
           )}
 
@@ -103,45 +99,38 @@ export default function SecuritySection() {
           <div className="space-y-4">
             <div className="relative">
               <InputField
-                label="Current Password"
+                label="Текущий пароль"
                 value={currentPassword}
                 onChange={setCurrentPassword}
                 type={showCurrentPw ? "text" : "password"}
-                placeholder="Enter current password"
+                placeholder="Введите текущий пароль"
                 icon={Lock}
               />
-              {renderPasswordToggle(showCurrentPw, () =>
-                setShowCurrentPw(!showCurrentPw)
-              )}
+              {renderPasswordToggle(showCurrentPw, () => setShowCurrentPw(!showCurrentPw))}
             </div>
             <div className="relative">
               <InputField
-                label="New Password"
+                label="Новый пароль"
                 value={newPassword}
                 onChange={setNewPassword}
                 type={showNewPw ? "text" : "password"}
-                placeholder="At least 6 characters"
+                placeholder="Не менее 6 символов"
                 icon={Lock}
               />
-              {renderPasswordToggle(showNewPw, () =>
-                setShowNewPw(!showNewPw)
-              )}
+              {renderPasswordToggle(showNewPw, () => setShowNewPw(!showNewPw))}
             </div>
             <div className="relative">
               <InputField
-                label="Confirm New Password"
+                label="Подтвердите новый пароль"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 type={showConfirmPw ? "text" : "password"}
-                placeholder="Re-enter new password"
+                placeholder="Повторите новый пароль"
                 icon={Lock}
               />
-              {renderPasswordToggle(showConfirmPw, () =>
-                setShowConfirmPw(!showConfirmPw)
-              )}
+              {renderPasswordToggle(showConfirmPw, () => setShowConfirmPw(!showConfirmPw))}
             </div>
 
-            {/* Password strength */}
             {newPassword && (
               <div className="space-y-1">
                 <div className="flex gap-1">
@@ -162,10 +151,10 @@ export default function SecuritySection() {
                 </div>
                 <p className="text-[11px] text-slate-400">
                   {newPassword.length < 6
-                    ? "Weak — too short"
+                    ? "Слабый — слишком короткий"
                     : newPassword.length < 8
-                    ? "Fair — add more characters"
-                    : "Strong password"}
+                    ? "Средний — добавьте больше символов"
+                    : "Надёжный пароль"}
                 </p>
               </div>
             )}
@@ -179,12 +168,12 @@ export default function SecuritySection() {
               {saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Updating...
+                  Обновление...
                 </>
               ) : (
                 <>
                   <KeyRound className="w-4 h-4" />
-                  Update Password
+                  Обновить пароль
                 </>
               )}
             </button>
@@ -193,11 +182,10 @@ export default function SecuritySection() {
 
         <hr className="border-slate-100" />
 
-        {/* Danger Zone */}
         <div>
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-rose-500" />
-            <h4 className="font-semibold text-slate-900">Danger Zone</h4>
+            <h4 className="font-semibold text-slate-900">Опасная зона</h4>
           </div>
           <div className="space-y-3">
             <button
@@ -207,17 +195,11 @@ export default function SecuritySection() {
               <div className="flex items-center gap-3">
                 <LogOut className="w-4 h-4 text-rose-500" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-800">
-                    Sign Out
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Sign out of your account on this device
-                  </p>
+                  <p className="text-sm font-medium text-slate-800">Выйти</p>
+                  <p className="text-xs text-slate-400">Выйти из аккаунта на этом устройстве</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold text-rose-600 group-hover:underline">
-                Logout
-              </span>
+              <span className="text-xs font-semibold text-rose-600 group-hover:underline">Выйти</span>
             </button>
             <button
               type="button"
@@ -226,17 +208,11 @@ export default function SecuritySection() {
               <div className="flex items-center gap-3">
                 <Trash2 className="w-4 h-4 text-rose-500" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-800">
-                    Delete Account
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Permanently delete your account and all data
-                  </p>
+                  <p className="text-sm font-medium text-slate-800">Удалить аккаунт</p>
+                  <p className="text-xs text-slate-400">Навсегда удалить аккаунт и все данные</p>
                 </div>
               </div>
-              <span className="text-xs font-semibold text-rose-600 group-hover:underline">
-                Delete
-              </span>
+              <span className="text-xs font-semibold text-rose-600 group-hover:underline">Удалить</span>
             </button>
           </div>
         </div>

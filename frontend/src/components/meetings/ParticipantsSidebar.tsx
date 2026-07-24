@@ -1,4 +1,3 @@
-import React from "react";
 import { XMarkIcon, MicrophoneIcon, VideoCameraIcon } from "@heroicons/react/24/outline";
 
 interface Participant {
@@ -21,10 +20,9 @@ export default function ParticipantsSidebar({
 }: ParticipantsSidebarProps) {
   return (
     <aside className="w-80 h-full bg-slate-900/90 border border-slate-800 rounded-2xl flex flex-col backdrop-blur-md overflow-hidden transition-all duration-200">
-      {/* Header */}
       <div className="p-4 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <h3 className="font-semibold text-slate-200 text-sm">Participants</h3>
+          <h3 className="font-semibold text-slate-200 text-sm">Участники</h3>
           <span className="px-2 py-0.5 text-xs bg-slate-800 text-slate-400 rounded-full font-mono">
             {participants.length}
           </span>
@@ -37,7 +35,6 @@ export default function ParticipantsSidebar({
         </button>
       </div>
 
-      {/* Participant List */}
       <div className="flex-1 p-2 overflow-y-auto space-y-1">
         {participants.map((p) => (
           <div

@@ -1,25 +1,24 @@
 import { useNavigate } from "react-router-dom";
 import { CheckIcon, SparklesIcon } from "@heroicons/react/24/outline";
-import DashboardNavbar from "../components/dashboard/DashboardNavbar";
 import { useAuth } from "../contexts/AuthContext";
 import type { SubscriptionTier } from "../contexts/AuthContext";
 
 const freeFeatures = [
-  "30 minutes max meeting duration",
-  "Up to 5 participants per meeting",
-  "Basic meeting controls",
-  "Screen sharing",
-  "Chat support",
+  "Максимум 30 минут на встречу",
+  "До 5 участников",
+  "Базовое управление встречей",
+  "Демонстрация экрана",
+  "Чат поддержка",
 ];
 
 const proFeatures = [
-  "Unlimited meeting duration",
-  "Up to 30 participants per meeting",
-  "Advanced meeting controls",
-  "Screen sharing & recording",
-  "Priority chat support",
-  "Custom meeting backgrounds",
-  "Meeting analytics",
+  "Безлимитная длительность встреч",
+  "До 30 участников",
+  "Расширенное управление встречей",
+  "Демонстрация экрана и запись",
+  "Приоритетная поддержка в чате",
+  "Настраиваемые фоны",
+  "Аналитика встреч",
 ];
 
 interface PlanCardProps {
@@ -53,31 +52,27 @@ function PlanCard({
           : "border-slate-200 bg-white/80"
       }`}
     >
-      {/* Recommended Badge */}
       {isPro && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
           <SparklesIcon className="w-4 h-4" />
-          Recommended
+          Рекомендуем
         </div>
       )}
 
-      {/* Plan Header */}
       <div className="mb-6">
         <h3 className="text-xl font-bold text-slate-900">{title}</h3>
         <p className="text-sm text-slate-500 mt-1">{description}</p>
       </div>
 
-      {/* Price */}
       <div className="mb-6">
         <span className="text-5xl font-extrabold text-slate-900">
-          {price === "Free" ? "$0" : price}
+          {price === "Free" ? "0 TMT" : price}
         </span>
         {price !== "Free" && (
-          <span className="text-slate-400 text-sm font-medium ml-2">/month</span>
+          <span className="text-slate-400 text-sm font-medium ml-2">/месяц</span>
         )}
       </div>
 
-      {/* Features List */}
       <ul className="space-y-3.5 mb-8 flex-1">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-3">
@@ -93,10 +88,9 @@ function PlanCard({
         ))}
       </ul>
 
-      {/* Action Button */}
       {isCurrentPlan ? (
         <div className="w-full text-center py-3.5 rounded-2xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
-          Current Plan ✨
+          Текущий план ✨
         </div>
       ) : (
         <button
@@ -107,7 +101,7 @@ function PlanCard({
               : "bg-slate-900 text-white hover:bg-slate-800"
           }`}
         >
-          {tier === "free" ? "Downgrade" : "Upgrade to Pro"}
+          {tier === "free" ? "Понизить" : "Перейти на Pro"}
         </button>
       )}
     </div>
@@ -127,38 +121,33 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-            Choose Your{" "}
+            Выберите ваш{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Plan
+              Тариф
             </span>
           </h1>
           <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto">
-            Start with a free plan and upgrade as you grow. No hidden fees, no
-            credit card required.
+            Начните с бесплатного плана и переходите на более продвинутый по мере роста. Без скрытых платежей и необходимости вводить данные карты.
           </p>
         </div>
 
-        {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto items-start">
-          {/* Free Plan */}
           <PlanCard
-            title="Free"
+            title="Бесплатный"
             price="Free"
-            description="Perfect for getting started"
+            description="Идеально для начала"
             features={freeFeatures}
             tier="free"
             currentPlan={currentPlan}
             onUpgrade={handleUpgrade}
           />
 
-          {/* Pro Plan */}
           <PlanCard
             title="Pro"
-            price="$12"
-            description="For teachers and power users"
+            price="200 TMT"
+            description="Для преподавателей и продвинутых пользователей"
             features={proFeatures}
             tier="pro"
             isPro={true}
@@ -167,19 +156,18 @@ export default function Pricing() {
           />
         </div>
 
-        {/* Current Subscription Status */}
         <div className="mt-12 text-center">
           <p className="text-sm text-slate-400">
-            You are currently on the{" "}
+            Вы используете{" "}
             <span className="font-bold text-slate-700 capitalize">
-              {currentPlan}
+              {currentPlan === "free" ? "бесплатный" : "Pro"}
             </span>{" "}
-            plan.{" "}
+            план.{" "}
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/")}
               className="text-blue-600 hover:text-blue-700 font-semibold underline-offset-2 hover:underline ml-1"
             >
-              Back to Dashboard
+              На главную
             </button>
           </p>
         </div>

@@ -19,7 +19,7 @@ interface NotificationSettings {
   darkMode: boolean;
 }
 
-const NOTIFICATION_KEY = "teachflow_notification_prefs";
+const NOTIFICATION_KEY = "relay_notification_prefs";
 
 const DEFAULTS: NotificationSettings = {
   emailNotifications: true,
@@ -67,7 +67,7 @@ export default function NotificationsSection() {
         {saved && (
           <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-sm font-medium">
             <CheckCircle className="w-4 h-4 shrink-0" />
-            Preferences saved automatically
+            Настройки сохранены автоматически
           </div>
         )}
 
@@ -75,42 +75,41 @@ export default function NotificationsSection() {
           <ToggleSwitch
             enabled={notifications.emailNotifications}
             onChange={() => toggle("emailNotifications")}
-            label="Email Notifications"
-            description="Receive notifications via email"
+            label="Email уведомления"
+            description="Получать уведомления по электронной почте"
           />
           <ToggleSwitch
             enabled={notifications.pushNotifications}
             onChange={() => toggle("pushNotifications")}
-            label="Push Notifications"
-            description="Receive push notifications on your device"
+            label="Push-уведомления"
+            description="Получать push-уведомления на устройство"
           />
           <ToggleSwitch
             enabled={notifications.meetingReminders}
             onChange={() => toggle("meetingReminders")}
-            label="Meeting Reminders"
-            description="Get reminded before scheduled meetings"
+            label="Напоминания о встречах"
+            description="Получать напоминания перед запланированными встречами"
           />
           <ToggleSwitch
             enabled={notifications.assignmentUpdates}
             onChange={() => toggle("assignmentUpdates")}
-            label="Assignment Updates"
-            description="Stay informed about new assignments and grades"
+            label="Обновления заданий"
+            description="Быть в курсе новых заданий и оценок"
           />
           <ToggleSwitch
             enabled={notifications.marketingEmails}
             onChange={() => toggle("marketingEmails")}
-            label="Marketing Emails"
-            description="Product updates, tips, and special offers"
+            label="Маркетинговые письма"
+            description="Обновления продукта, советы и спецпредложения"
           />
         </div>
 
-        {/* Summary */}
         <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { icon: Mail, label: "Email", value: notifications.emailNotifications },
             { icon: Smartphone, label: "Push", value: notifications.pushNotifications },
-            { icon: MessageSquare, label: "In-app", value: true },
-            { icon: notifications.darkMode ? Moon : Sun, label: "Theme", value: "Auto" },
+            { icon: MessageSquare, label: "В приложении", value: true },
+            { icon: notifications.darkMode ? Moon : Sun, label: "Тема", value: "Авто" },
           ].map((item) => (
             <div
               key={item.label}
@@ -125,8 +124,8 @@ export default function NotificationsSection() {
               <span className="text-[10px] opacity-70">
                 {typeof item.value === "boolean"
                   ? item.value
-                    ? "Active"
-                    : "Off"
+                    ? "Активно"
+                    : "Выкл"
                   : item.value}
               </span>
             </div>
